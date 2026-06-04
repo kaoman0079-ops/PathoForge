@@ -22,11 +22,10 @@
             -webkit-text-size-adjust: 100%;
         }
 
-        /* ポータルへ戻るボタン */
+        /* 他のアプリ（Meridian-Quiz）と統一した戻るボタンのスタイル */
         .back-portal {
             display: inline-flex;
             align-items: center;
-            margin: 15px 0 0 15px;
             padding: 6px 12px;
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -36,10 +35,11 @@
             font-size: 0.85rem;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            margin-bottom: 10px;
         }
         .back-portal span { margin-right: 5px; }
 
-        .container { padding: 10px 15px 60px; max-width: 600px; margin: 0 auto; }
+        .container { padding: 20px 15px 60px; max-width: 600px; margin: 0 auto; }
 
         h1 { font-size: 1.8rem; font-weight: 800; margin: 10px 0 5px; text-align: center; }
         .subtitle { font-size: 0.85rem; color: var(--text-dim); text-align: center; font-weight: 600; margin-bottom: 25px; }
@@ -68,9 +68,8 @@
             box-sizing: border-box;
         }
 
-        /* ラジオボタン・チェックボックスのボタンスタイル */
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        /* ボタン・チェックボックスのグループ */
+        .btn-group, .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         .btn-label {
             display: block;
@@ -176,15 +175,16 @@
         }
         .result-view h3 { font-size: 1.4rem; margin: 0 0 10px; font-weight: 800; }
         .result-view p { color: var(--text-dim); font-weight: 600; margin: 0 0 25px; }
+        .retry-btn { background-color: var(--accent-blue); color: white; border: none; font-size: 1rem; font-weight: 800; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="back-portal">
-        <span>⏎</span> 🏠 Portal
-    </a>
-
     <div class="container">
+        <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="back-portal">
+            <span>⏎</span> 🏠 Portal
+        </a>
+
         <h1>病理学カード</h1>
         <div class="subtitle">超高速・一問一答暗記システム</div>
 
@@ -246,7 +246,7 @@
                 <div class="score-circle" id="final-score">0 / 0</div>
                 <h3>演習終了！</h3>
                 <p>お疲れ様でした！繰り返し復習しましょう。</p>
-                <button onclick="resetApp()">もう一度挑戦する</button>
+                <button class="retry-btn" onclick="resetApp()">もう一度挑戦する</button>
             </div>
         </div>
     </div>
@@ -283,7 +283,7 @@
             {ch:9, no:27, q:"抗核抗体がみられる疾患は", a:"SLE（全身性エリテマトーデス）"},
             {ch:9, no:28, q:"関節リウマチの病理学的所見は", a:"パンヌス形成"},
             {ch:9, no:29, q:"橋本病の障害臓器は", a:"甲状腺"},
-            {ch:9, no:30, q:"AIDSの主な死因は", a:"カポジ肉腫・悪性リンパ腫・感染症"},
+            {ch:30, no:30, q:"AIDSの主な死因は", a:"カポジ肉腫・悪性リンパ腫・感染症"},
             {ch:10, no:1, q:"奇形とは何か", a:"出生時にみられる形態・構造・機能の異常"},
             {ch:10, no:2, q:"奇形成立時期はいつか", a:"妊娠第3週〜第10週"},
             {ch:10, no:3, q:"奇形が成立する時期を何というか", a:"臨界期"},
@@ -311,4 +311,152 @@
             {ch:7, no:5, q:"炎症の初期の血流変化は", a:"虚血→充血"},
             {ch:7, no:6, q:"急性炎症の分類は", a:"変質性炎・滲出性炎"},
             {ch:7, no:7, q:"慢性炎症の分類は", a:"増殖性炎・特異性炎"},
-            {ch:7, no:8, q:"滲出性炎に含まれる炎症は", a:"漿液性炎・線維素性炎
+            {ch:7, no:8, q:"滲出性炎に含まれる炎症は", a:"漿液性炎・線維素性炎・化膿性炎・出血性炎・腐敗性炎"},
+            {ch:7, no:9, q:"漿液性炎の特徴は", a:"組織損失を伴わずほとんど瘢痕を残さない"},
+            {ch:7, no:10, q:"漿液性炎の代表疾患は", a:"水疱・マメ・関節炎・腹膜炎"},
+            {ch:7, no:11, q:"線維素性炎の特徴は", a:"フィブリン析出・偽膜形成"},
+            {ch:7, no:12, q:"線維素性炎の代表疾患は", a:"ジフテリア・大葉性肺炎・線維素性心外膜炎"},
+            {ch:7, no:13, q:"化膿性炎の特徴は", a:"好中球主体で膿を形成する"},
+            {ch:7, no:14, q:"化膿性炎の代表疾患は", a:"膿瘍・蜂窩織炎・蓄膿"},
+            {ch:7, no:15, q:"化膿性炎の原因菌は", a:"ブドウ球菌・連鎖球菌"},
+            {ch:7, no:16, q:"出血性炎の特徴は", a:"赤血球の滲出"},
+            {ch:7, no:17, q:"出血性炎の代表疾患は", a:"インフルエンザ肺炎・劇症肝炎・O-157"},
+            {ch:7, no:18, q:"壊疽性炎とは", a:"壊死＋腐敗"},
+            {ch:7, no:19, q:"壊疽性炎の代表疾患は", a:"肺壊疽・壊疽性子宮内膜炎"},
+            {ch:7, no:20, q:"増殖性炎の代表疾患は", a:"間質性肺炎・肝硬変"},
+            {ch:7, no:21, q:"特異性炎の代表疾患は", a:"結核・梅毒・ハンセン病"},
+            {ch:7, no:22, q:"結核結節の構造は", a:"中心：乾酪壊死 外側：リンパ球 周囲：マクロファージ・類上皮細胞・ラングハンス巨細胞"},
+            {ch:7, no:23, q:"梅毒（ゴム腫）の構造は", a:"中心：壊死 周囲：マクロファージ 外側：リンパ球・形質細胞・線維芽細胞"},
+            {ch:7, no:24, q:"ハンセン病（癩腫）の特徴は", a:"類上皮細胞とリンパ球主体の肉芽腫形成"},
+            {ch:7, no:25, q:"滲出とは", a:"血漿成分が血管外へ出て滲出液となる"},
+            {ch:7, no:26, q:"血管透過性亢進は何によって起こるか", a:"ケミカルメディエーター"},
+            {ch:7, no:27, q:"ヒスタミンの作用は", a:"血管拡張・血管透過性亢進"},
+            {ch:7, no:28, q:"セロトニンの作用は", a:"血管収縮・血管透過性亢進"},
+            {ch:7, no:29, q:"ブラジキニンの作用は", a:"血管拡張・血管透過性亢進・疼痛"},
+            {ch:7, no:30, q:"プロスタグランジンの作用は", a:"ブラジキニン作用増強・血管拡張・透過性亢進"},
+            {ch:8, no:1, q:"腫瘍とは", a:"細胞の自律的増殖"},
+            {ch:8, no:2, q:"腫瘍の転移は", a:"良性：転移しない 悪性：転移する"},
+            {ch:8, no:3, q:"腫瘍の発育形式は", a:"良性：膨張性（圧排性） 悪性：浸潤性"},
+            {ch:8, no:4, q:"腫瘍の境界は", a:"良性：明瞭 悪性：不明瞭"},
+            {ch:8, no:5, q:"腫瘍の発育速度は", a:"良性：遅い 悪性：速い"},
+            {ch:8, no:6, q:"腫瘍の壊死は", a:"良性：ほとんどない 悪性：あり"},
+            {ch:8, no:7, q:"標識染色体の代表例は", a:"慢性骨髄性白血病・フィラデルフィア染色体"},
+            {ch:8, no:8, q:"転移の種類は", a:"血行性・リンパ行性・播種性"},
+            {ch:8, no:9, q:"血行性転移を受けやすい臓器は", a:"肝臓・肺・副腎・骨髄"},
+            {ch:8, no:10, q:"血行性転移を受けにくい臓器は", a:"脾臓・心臓・骨格筋"},
+            {ch:8, no:11, q:"側癌変化がみられる代表疾患は", a:"胃癌（胃潰瘍）・乳癌（乳腺症）・肝癌（肝硬変）"},
+            {ch:8, no:12, q:"早期癌の浸潤時期とは", a:"基底膜を超えて粘膜下層に浸潤"},
+            {ch:8, no:13, q:"異型性とは", a:"細胞・核の形態異常"},
+            {ch:8, no:14, q:"分化度とは", a:"分化の成熟度"},
+            {ch:8, no:15, q:"核異型の特徴は", a:"核の大小不同・濃染・クロマチン増加・核小体増大・核/細胞質比大・分裂像増加"},
+            {ch:8, no:16, q:"高分化とは", a:"母組織に似ている"},
+            {ch:8, no:17, q:"分化とは", a:"機能・形態を持つ細胞になること"},
+            {ch:8, no:18, q:"低分化とは", a:"母組織に似ていない"},
+            {ch:8, no:19, q:"上皮性腫瘍とは", a:"皮膚・消化器・呼吸器・泌尿器など由来"},
+            {ch:8, no:20, q:"非上皮性腫瘍とは", a:"間葉組織（骨・筋・神経など）由来"},
+            {ch:8, no:21, q:"上皮性悪性腫瘍の名称は", a:"癌"},
+            {ch:8, no:22, q:"非上皮性悪性腫瘍の名称は", a:"肉腫"},
+            {ch:8, no:23, q:"腺癌の好発部位は", a:"胃・大腸・気管支末梢・腎臓・子宮体部・卵巣"},
+            {ch:8, no:24, q:"扁平上皮癌の好発部位は", a:"食道・肛門・気管・気管支・尿路・子宮頸部"},
+            {ch:8, no:25, q:"肺癌のホルモンと症状は", a:"ACTH分泌・クッシング様症状"},
+            {ch:8, no:26, q:"性ホルモンが関与する腫瘍は", a:"乳癌・子宮体癌・前立腺癌"},
+            {ch:8, no:27, q:"HPVの腫瘍は", a:"子宮頸癌"},
+            {ch:8, no:28, q:"EBウイルスの腫瘍は", a:"バーキットリンパ腫・上咽頭癌"},
+            {ch:8, no:29, q:"遺伝的素因でみられる代表疾患は", a:"家族性大腸ポリポーシス・網膜芽細胞腫・色素性乾皮症・レックリングハウゼン病・多発性内分泌腺腫症"},
+            {ch:8, no:30, q:"HTLV-1ウイルスの腫瘍は", a:"成人T細胞白血病"}
+        ];
+
+        let quizQueue = [];
+        let currentIndex = 0;
+        let score = 0;
+        let isAnswerRevealed = false;
+
+        // クイズ開始処理
+        function startQuiz() {
+            const selectedChapters = Array.from(document.querySelectorAll('input[name="chapter"]:checked')).map(el => parseInt(el.value));
+            if (selectedChapters.length === 0) {
+                alert("出題する章を少なくとも1つ選択してください。");
+                return;
+            }
+
+            let filtered = rawDatabase.filter(item => selectedChapters.includes(item.ch));
+
+            const order = document.querySelector('input[name="order"]:checked').value;
+            if (order === "shuffle") {
+                filtered.sort(() => Math.random() - 0.5);
+            } else {
+                filtered.sort((a, b) => a.ch - b.ch || a.no - b.no);
+            }
+
+            const countVal = document.getElementById("quiz-count").value;
+            const totalQuestions = countVal === "all" ? filtered.length : Math.min(parseInt(countVal), filtered.length);
+            
+            quizQueue = filtered.slice(0, totalQuestions);
+            
+            if (quizQueue.length === 0) {
+                alert("該当する問題がありません。");
+                return;
+            }
+
+            currentIndex = 0;
+            score = 0;
+            document.getElementById("setup-view").style.display = "none";
+            document.getElementById("quiz-view").style.display = "block";
+            
+            showQuestion();
+        }
+
+        // 問題の表示
+        function showQuestion() {
+            isAnswerRevealed = false;
+            const currentItem = quizQueue[currentIndex];
+            const chapterNames = { 7: "炎症", 8: "腫瘍", 9: "免疫", 10: "先天異常" };
+
+            document.getElementById("current-index").innerText = `第 ${currentIndex + 1} 問 / 全 ${quizQueue.length} 問`;
+            document.getElementById("current-score").innerText = `正解: ${score}`;
+            document.getElementById("card-tag").innerText = `第${currentItem.ch}章 【${chapterNames[currentItem.ch]}】 No.${currentItem.no}`;
+            document.getElementById("question-text").innerText = currentItem.q;
+            
+            document.getElementById("tap-hint").style.display = "block";
+            document.getElementById("answer-text").style.display = "none";
+            document.getElementById("answer-text").innerText = currentItem.a;
+            document.getElementById("action-zone").style.display = "none";
+        }
+
+        // 答えを見る
+        function revealAnswer() {
+            if (isAnswerRevealed) return;
+            isAnswerRevealed = true;
+            
+            document.getElementById("tap-hint").style.display = "none";
+            document.getElementById("answer-text").style.display = "block";
+            document.getElementById("action-zone").style.display = "grid";
+        }
+
+        // 正解・不正解ボタン判定
+        function handleAnswer(isCorrect) {
+            if (isCorrect) score++;
+            
+            currentIndex++;
+            if (currentIndex < quizQueue.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // 結果発表
+        function showResult() {
+            document.getElementById("quiz-view").style.display = "none";
+            document.getElementById("result-view").style.display = "block";
+            document.getElementById("final-score").innerText = `${score} / ${quizQueue.length}`;
+        }
+
+        // 最初に戻る
+        function resetApp() {
+            document.getElementById("result-view").style.display = "none";
+            document.getElementById("setup-view").style.display = "block";
+        }
+    </script>
+</body>
+</html>
