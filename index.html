@@ -23,7 +23,7 @@
             -webkit-text-size-adjust: 100%;
         }
 
-        /* 戻るボタンのスタイル */
+        /* 戻るボタン */
         .back-portal {
             display: inline-flex;
             align-items: center;
@@ -46,7 +46,6 @@
         h1 { font-size: 1.8rem; font-weight: 800; margin: 10px 0 5px; text-align: center; }
         .subtitle { font-size: 0.85rem; color: var(--text-dim); text-align: center; font-weight: 600; margin-bottom: 25px; }
 
-        /* ローディングメッセージ */
         .loading-msg { text-align: center; color: var(--text-dim); font-weight: bold; padding: 40px; }
 
         /* 設定セクション */
@@ -58,7 +57,30 @@
             margin-bottom: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
-        section h3 { margin: 0 0 12px; font-size: 0.9rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.05em; }
+        
+        /* タイトルと全章ボタンを横並びにするヘッダー */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .section-header h3 { margin: 0; font-size: 0.9rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.05em; }
+        
+        /* 全章チェックボックスの独立スタイル */
+        .all-select-label {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            background-color: #F8F9FA;
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid #CED4DA;
+        }
+        .all-select-label input { margin-right: 5px; cursor: pointer; }
 
         select, button {
             width: 100%;
@@ -73,7 +95,6 @@
             box-sizing: border-box;
         }
 
-        /* ボタン・チェックボックスのグループ */
         .btn-group, .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         .btn-label {
@@ -108,7 +129,7 @@
         }
         .start-btn:active { transform: scale(0.98); }
 
-        /* クイズ画面 */
+        /* クイズ・結果画面 */
         .quiz-view, .result-view { display: none; }
 
         .progress-bar {
@@ -122,7 +143,6 @@
             padding: 0 5px;
         }
 
-        /* 問題カード */
         .flash-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -154,7 +174,6 @@
         .answer-text { font-size: 1.3rem; font-weight: 800; color: var(--accent-green); display: none; line-height: 1.4; }
         .tap-hint { font-size: 0.8rem; color: var(--text-dim); font-weight: bold; background: #F8F9FA; padding: 6px 16px; border-radius: 20px; border: 1px dashed #CED4DA; }
 
-        /* アクションボタン */
         .action-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; display: none; }
         .action-btn { padding: 14px; font-size: 1rem; font-weight: 800; border: none; border-radius: 14px; cursor: pointer; color: white; }
         .wrong-btn { background-color: var(--accent-red); box-shadow: 0 4px 6px rgba(231, 76, 60, 0.2); }
@@ -218,12 +237,18 @@
 
         <div id="setup-view" style="display: none;">
             <section>
-                <h3>出題する章（複数選択可）</h3>
+                <div class="section-header">
+                    <h3>出題する章（複数選択可）</h3>
+                    <label class="all-select-label">
+                        <input type="checkbox" id="all-chapters-checkbox" checked onchange="toggleAllChapters(this)">全章
+                    </label>
+                </div>
+                
                 <div class="checkbox-group">
-                    <label class="btn-label"><input type="checkbox" name="chapter" value="7" checked>第7章 炎症</label>
-                    <label class="btn-label"><input type="checkbox" name="chapter" value="8" checked>第8章 腫瘍</label>
-                    <label class="btn-label"><input type="checkbox" name="chapter" value="9" checked>第9章 免疫</label>
-                    <label class="btn-label"><input type="checkbox" name="chapter" value="10" checked>第10章 先天異常</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="7" checked onchange="onIndividualChange()">第7章 炎症</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="8" checked onchange="onIndividualChange()">第8章 腫瘍</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="9" checked onchange="onIndividualChange()">第9章 免疫</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="10" checked onchange="onIndividualChange()">第10章 先天異常</label>
                 </div>
             </section>
 
@@ -287,16 +312,14 @@
                         </tr>
                     </thead>
                     <tbody id="history-table-body">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // CSVから解析したデータを格納する配列
         let rawDatabase = [];
-
         let quizQueue = [];
         let currentIndex = 0;
         let score = 0;
@@ -304,23 +327,18 @@
         let quizHistory = [];
         let appState = 'setup';
 
-        // 画面読み込み時にCSVを取得する
         window.addEventListener('DOMContentLoaded', () => {
             fetchCSV();
         });
 
-        // 同じフォルダにある data.csv をフェッチしてパースする
         function fetchCSV() {
             fetch('data.csv')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('data.csv の読み込みに失敗しました。ファイルが存在するか確認してください。');
-                    }
+                    if (!response.ok) throw new Error('data.csv の読み込みに失敗しました。');
                     return response.text();
                 })
                 .then(text => {
                     parseCSV(text);
-                    // 読込完了したらローディングを消して設定画面を出す
                     document.getElementById('loading-view').style.display = 'none';
                     document.getElementById('setup-view').style.display = 'block';
                 })
@@ -330,23 +348,14 @@
                 });
         }
 
-        // CSVテキストをオブジェクト配列に変換する (簡易パース)
         function parseCSV(text) {
-            // 改行で分割
             const lines = text.split(/\r?\n/);
-            
-            // 最初の行（ヘッダー: ch,no,q,a）を取り除く場合はi=1から、データのみならi=0から
-            // ここではヘッダー行があると仮定して1行目をスキップします
             let startRow = 0;
-            if(lines[0].includes('ch') || lines[0].includes('q')) {
-                startRow = 1;
-            }
+            if(lines[0].includes('ch') || lines[0].includes('q')) startRow = 1;
 
             for (let i = startRow; i < lines.length; i++) {
                 const line = lines[i].trim();
-                if (!line) continue; // 空行はスキップ
-
-                // カンマで分割。値のなかにカンマが含まれない想定の簡易分割
+                if (!line) continue;
                 const parts = line.split(',');
                 if (parts.length >= 4) {
                     rawDatabase.push({
@@ -356,6 +365,30 @@
                         a: parts[3].trim()
                     });
                 }
+            }
+        }
+
+        // ★「全章」のチェックボックスが切り替わった時の処理
+        function toggleAllChapters(masterCanvas) {
+            const checkboxes = document.querySelectorAll('input[name="chapter"]');
+            checkboxes.forEach(cb => {
+                cb.checked = masterCanvas.checked;
+            });
+        }
+
+        // ★各章のチェックボックスが個別に切り替わった時の処理
+        function onIndividualChange() {
+            const checkboxes = document.querySelectorAll('input[name="chapter"]');
+            const allCheckbox = document.getElementById('all-chapters-checkbox');
+            
+            const total = checkboxes.length;
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+
+            // 全てにチェックが入っていれば「全章」もチェック、1つでも外れていれば外す
+            if (checkedCount === total) {
+                allCheckbox.checked = true;
+            } else {
+                allCheckbox.checked = false;
             }
         }
 
