@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>病理学カード - Meridian Node</title>
+    <style>
+        :root {
+            --main-bg: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --accent-blue: #3498DB;
+            --accent-green: #2ECC71;
+            --text-main: #2C3E50;
+            --text-dim: #7F8C8D;
+            --border-color: #E1E8ED;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--main-bg); 
+            margin: 0; padding: 0; 
+            color: var(--text-main);
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* ポータルへ戻るボタン */
+        .back-portal {
+            display: inline-flex;
+            align-items: center;
+            margin: 15px 0 0 15px;
+            padding: 6px 12px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .back-portal span { margin-right: 5px; }
+
+        .container { padding: 10px 15px 60px; max-width: 600px; margin: 0 auto; }
+
+        h1 { font-size: 1.8rem; font-weight: 800; margin: 10px 0 5px; text-align: center; }
+        .subtitle { font-size: 0.85rem; color: var(--text-dim); text-align: center; font-weight: 600; margin-bottom: 25px; }
+
+        /* 設定セクション */
+        section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+        }
+        section h3 { margin: 0 0 12px; font-size: 0.9rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.05em; }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            font-size: 0.95rem;
+            border-radius: 12px;
+            border: 1px solid #CED4DA;
+            background-color: #FFF;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        /* ラジオボタン・チェックボックスのボタンスタイル */
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .btn-label {
+            display: block;
+            background-color: #FFF;
+            border: 1px solid #CED4DA;
+            padding: 12px;
+            text-align: center;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-label input { display: none; }
+        .btn-label:has(input:checked) {
+            background-color: #EBF5FB;
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .start-btn {
+            background-color: var(--accent-blue);
+            color: #FFF;
+            border: none;
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+            transition: transform 0.1s;
+            margin-top: 10px;
+        }
+        .start-btn:active { transform: scale(0.98); }
+
+        /* クイズ画面 */
+        .quiz-view, .result-view { display: none; }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 0 5px;
+        }
+
+        /* 問題カード */
+        .flash-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 35px 20px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            cursor: pointer;
+            position: relative;
+        }
+        .card-tag {
+            position: absolute;
+            top: 15px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-dim);
+            background-color: #E9ECEF;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .question-text { font-size: 1.25rem; font-weight: 800; line-height: 1.5; margin: 20px 0; word-break: break-all; }
+        
+        .answer-zone { width: 100%; text-align: center; margin-top: 15px; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+        .answer-text { font-size: 1.3rem; font-weight: 800; color: var(--accent-green); display: none; line-height: 1.4; }
+        .tap-hint { font-size: 0.8rem; color: var(--text-dim); font-weight: bold; background: #F8F9FA; padding: 6px 16px; border-radius: 20px; border: 1px dashed #CED4DA; }
+
+        /* アクションボタン */
+        .action-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; display: none; }
+        .action-btn { padding: 14px; font-size: 1rem; font-weight: 800; border: none; border-radius: 14px; cursor: pointer; color: white; }
+        .wrong-btn { background-color: #E74C3C; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.2); }
+        .correct-btn { background-color: var(--accent-green); box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2); }
+
+        /* 結果画面 */
+        .result-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .score-circle {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background-color: #E8F8F5;
+            color: var(--accent-green);
+            font-size: 1.8rem; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .result-view h3 { font-size: 1.4rem; margin: 0 0 10px; font-weight: 800; }
+        .result-view p { color: var(--text-dim); font-weight: 600; margin: 0 0 25px; }
+    </style>
+</head>
+<body>
+
+    <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="back-portal">
+        <span>⏎</span> 🏠 Portal
+    </a>
+
+    <div class="container">
+        <h1>病理学カード</h1>
+        <div class="subtitle">超高速・一問一答暗記システム</div>
+
+        <div id="setup-view">
+            <section>
+                <h3>出題する章（複数選択可）</h3>
+                <div class="checkbox-group">
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="7" checked>第7章 炎症</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="8" checked>第8章 腫瘍</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="9" checked>第9章 免疫</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="10" checked>第10章 先天異常</label>
+                </div>
+            </section>
+
+            <section>
+                <h3>問題数</h3>
+                <select id="quiz-count">
+                    <option value="5" selected>5 問</option>
+                    <option value="10">10 問</option>
+                    <option value="30">30 問</option>
+                    <option value="all">全問出題</option>
+                </select>
+            </section>
+
+            <section>
+                <h3>出題順序</h3>
+                <div class="btn-group">
+                    <label class="btn-label"><input type="radio" name="order" value="shuffle" checked>ランダム</label>
+                    <label class="btn-label"><input type="radio" name="order" value="normal">章・番号順</label>
+                </div>
+            </section>
+
+            <button class="start-btn" onclick="startQuiz()">演習開始 🚀</button>
+        </div>
+
+        <div id="quiz-view" class="quiz-view">
+            <div class="progress-bar">
+                <span id="current-index">第 1 問</span>
+                <span id="current-score">正解: 0</span>
+            </div>
+
+            <div class="flash-card" onclick="revealAnswer()">
+                <div class="card-tag" id="card-tag">第 0 章</div>
+                <div class="question-text" id="question-text">問題がここに表示されます</div>
+                <div class="answer-zone">
+                    <div class="tap-hint" id="tap-hint">タップして答えを見る</div>
+                    <div class="answer-text" id="answer-text">正解がここに表示されます</div>
+                </div>
+            </div>
+
+            <div class="action-zone" id="action-zone">
+                <button class="action-btn wrong-btn" onclick="handleAnswer(false)">❌ 不正解</button>
+                <button class="action-btn correct-btn" onclick="handleAnswer(true)">⭕ 正解！</button>
+            </div>
+        </div>
+
+        <div id="result-view" class="result-view">
+            <div class="result-card">
+                <div class="score-circle" id="final-score">0 / 0</div>
+                <h3>演習終了！</h3>
+                <p>お疲れ様でした！繰り返し復習しましょう。</p>
+                <button onclick="resetApp()">もう一度挑戦する</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全120問のデータベース
+        const rawDatabase = [
+            {ch:9, no:1, q:"抗原提示細胞とは", a:"樹状細胞・マクロファージ・B細胞"},
+            {ch:9, no:2, q:"液性免疫の主役細胞は", a:"B細胞"},
+            {ch:9, no:3, q:"補体の働きとは", a:"細胞破壊・融解"},
+            {ch:9, no:4, q:"オプソニン効果とは", a:"貪食細胞が異物を取り込みやすくする作用"},
+            {ch:9, no:5, q:"抗体を産生する細胞は", a:"形質細胞"},
+            {ch:9, no:6, q:"細胞性免疫の主役細胞は", a:"T細胞"},
+            {ch:9, no:7, q:"マクロファージの働きとは", a:"貪食・抗原提示"},
+            {ch:9, no:8, q:"NK細胞の働きとは", a:"腫瘍細胞・ウイルス感染細胞の破壊"},
+            {ch:9, no:9, q:"IgGの特徴は", a:"最も多い免疫グロブリン・胎盤通過"},
+            {ch:9, no:10, q:"IgEの特徴は", a:"最も少ない免疫グロブリン・I型アレルギーに関与"},
+            {ch:9, no:11, q:"胎児期から産生される免疫グロブリンは", a:"IgM"},
+            {ch:9, no:12, q:"局所免疫として働く免疫グロブリンは", a:"IgA"},
+            {ch:9, no:13, q:"アレルギーとは", a:"抗原に対する過敏反応"},
+            {ch:9, no:14, q:"I型アレルギーの別名は", a:"アナフィラキシー型"},
+            {ch:9, no:15, q:"II型アレルギーの別名は", a:"細胞傷害型"},
+            {ch:9, no:16, q:"III型アレルギーの別名は", a:"免疫複合体型"},
+            {ch:9, no:17, q:"IV型アレルギーの別名は", a:"遅延型"},
+            {ch:9, no:18, q:"V型アレルギーの別名は", a:"刺激型"},
+            {ch:9, no:19, q:"ヒスタミンを放出する細胞は", a:"肥満細胞（マスト細胞）"},
+            {ch:9, no:20, q:"I型アレルギーの代表疾患は", a:"花粉症・気管支喘息・アトピー性皮膚炎・蕁麻疹"},
+            {ch:9, no:21, q:"III型アレルギーの代表疾患は", a:"急性糸球体腎炎・SLE・血清病"},
+            {ch:9, no:22, q:"IV型アレルギーの代表疾患は", a:"接触性皮膚炎・結核"},
+            {ch:9, no:23, q:"V型アレルギーの代表疾患は", a:"バセドウ病"},
+            {ch:9, no:24, q:"ツベルクリン反応は何型アレルギーか", a:"IV型アレルギー"},
+            {ch:9, no:25, q:"HIVが感染する細胞は", a:"CD4陽性T細胞（ヘルパーT細胞）"},
+            {ch:9, no:26, q:"自己免疫疾患とは", a:"自己を攻撃する疾患"},
+            {ch:9, no:27, q:"抗核抗体がみられる疾患は", a:"SLE（全身性エリテマトーデス）"},
+            {ch:9, no:28, q:"関節リウマチの病理学的所見は", a:"パンヌス形成"},
+            {ch:9, no:29, q:"橋本病の障害臓器は", a:"甲状腺"},
+            {ch:9, no:30, q:"AIDSの主な死因は", a:"カポジ肉腫・悪性リンパ腫・感染症"},
+            {ch:10, no:1, q:"奇形とは何か", a:"出生時にみられる形態・構造・機能の異常"},
+            {ch:10, no:2, q:"奇形成立時期はいつか", a:"妊娠第3週〜第10週"},
+            {ch:10, no:3, q:"奇形が成立する時期を何というか", a:"臨界期"},
+            {ch:10, no:4, q:"奇形の原因は", a:"遺伝因子・環境因子"},
+            {ch:10, no:5, q:"ダウン症候群の染色体異常は", a:"21トリソミー"},
+            {ch:10, no:6, q:"パトー症候群の染色体異常は", a:"13トリソミー"},
+            {ch:10, no:7, q:"エドワーズ症候群の染色体異常は", a:"18トリソミー"},
+            {ch:10, no:8, q:"ターナー症候群の染色体異常は", a:"45XO"},
+            {ch:10, no:9, q:"クラインフェルター症候群の染色体異常は", a:"47XXY"},
+            {ch:10, no:10, q:"猫鳴き症候群の原因は", a:"第5染色体短腕欠損"},
+            {ch:10, no:11, q:"奇形の原因となるウイルスは", a:"風疹ウイルス・サイトメガロウイルス"},
+            {ch:10, no:12, q:"ウイルス以外の感染原因は", a:"トキソプラズマ症・梅毒"},
+            {ch:10, no:13, q:"サリドマイドによる代表奇形は", a:"アザラシ肢症"},
+            {ch:10, no:14, q:"有機水銀による代表疾患は", a:"胎児性水俣病"},
+            {ch:10, no:15, q:"常染色体優性遺伝の新名称は", a:"常染色体顕性遺伝"},
+            {ch:10, no:16, q:"常染色体優性遺伝の発症確率は", a:"50%"},
+            {ch:10, no:17, q:"常染色体劣性遺伝の新名称は", a:"常染色体潜性遺伝"},
+            {ch:10, no:18, q:"常染色体劣性遺伝の発症確率は", a:"25%"},
+            {ch:10, no:19, q:"伴性劣性遺伝の代表疾患は", a:"血友病・デュシェンヌ型筋ジストロフィー"},
+            {ch:10, no:20, q:"多因子遺伝の代表疾患は", a:"口唇口蓋裂・先天性股関節脱臼・本態性高血圧・若年性糖尿病"},
+            {ch:7, no:1, q:"炎症の五大徴候は", a:"発赤・発熱・腫脹・疼痛・機能障害"},
+            {ch:7, no:2, q:"炎症の構成要素は", a:"血管・血管内外細胞・液性因子"},
+            {ch:7, no:3, q:"炎症の基本的過程は", a:"変質・滲出・増殖"},
+            {ch:7, no:4, q:"炎症の過程は", a:"組織傷害→循環障害→滲出→組織増殖"},
+            {ch:7, no:5, q:"炎症の初期の血流変化は", a:"虚血→充血"},
+            {ch:7, no:6, q:"急性炎症の分類は", a:"変質性炎・滲出性炎"},
+            {ch:7, no:7, q:"慢性炎症の分類は", a:"増殖性炎・特異性炎"},
+            {ch:7, no:8, q:"滲出性炎に含まれる炎症は", a:"漿液性炎・線維素性炎
