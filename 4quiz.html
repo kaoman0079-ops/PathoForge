@@ -250,4 +250,37 @@
 
         .history-section {
             background-color: var(--card-bg);
-            border: 1px solid var(--border
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .history-section h4 { margin: 5px 0 15px 5px; font-size: 1.1rem; font-weight: 800; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        .history-table th, .history-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        .history-table th { font-weight: 800; color: var(--text-dim); background-color: #F8F9FA; }
+        .history-table td strong { display: block; color: var(--text-main); margin-bottom: 4px; font-size: 0.9rem; }
+        .history-table td .ans-label { color: var(--text-dim); font-size: 0.8rem; display: block; margin-top: 2px; }
+        .status-cell { font-size: 1.2rem; font-weight: bold; text-align: center; width: 40px; }
+        .status-correct { color: var(--accent-green); }
+        .status-wrong { color: var(--accent-red); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="index.html" class="back-portal" id="back-button" onclick="handleBackClick(event)">
+            <span id="back-icon">⏎</span> <span id="back-text">病理学ポータル</span>
+        </a>
+
+        <h1>病理学クイズ</h1>
+        <div class="subtitle">4択問題・国家試験対策システム</div>
+
+        <div id="loading-view" class="loading-msg">
+            ⏳ データを読み込んでいます...
+        </div>
+
+        <div id="setup-view" style="display: none;">
+            <section>
+                <div class="section-header">
+                    <h3>出題する章（複数選択可）</h3>
