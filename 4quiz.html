@@ -165,7 +165,7 @@
             padding: 3px 10px;
             border-radius: 20px;
         }
-        .question-text { font-size: 1.2rem; font-weight: 800; line-height: 1.6; margin-top: 15px; word-break: break-all; }
+        .question-text { font-size: 1.2rem; font-weight: 800; line-height: 1.6; margin-top: 15px; word-break: break-all; white-space: pre-wrap; }
 
         /* 4択選択肢ボタン */
         .choices-zone { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
@@ -182,6 +182,7 @@
             cursor: pointer;
             box-sizing: border-box;
             transition: all 0.1s ease;
+            white-space: pre-wrap;
         }
         .choice-btn.selected { background-color: var(--accent-blue-light); border-color: var(--accent-blue); }
         .choice-btn.correct-ans { background-color: #E8F8F5 !important; border-color: var(--accent-green) !important; color: #117A65 !important; }
@@ -213,7 +214,7 @@
         .feedback-title { font-size: 1.1rem; font-weight: 900; margin: 0 0 8px 0; }
         .feedback-title.correct { color: var(--accent-green); }
         .feedback-title.wrong { color: var(--accent-red); }
-        .explanation-text { font-size: 0.88rem; font-weight: 600; line-height: 1.5; color: #34495E; margin: 0 0 15px 0; }
+        .explanation-text { font-size: 0.88rem; font-weight: 600; line-height: 1.5; color: #34495E; margin: 0 0 15px 0; white-space: pre-wrap; }
         .next-btn {
             background-color: var(--text-main);
             color: white;
@@ -382,7 +383,6 @@
         let quizHistory = [];
         let appState = 'setup';
 
-        // 🌟 修正：ファイルを『data2.csv』に固定しました
         const CSV_FILE_NAME = 'data2.csv'; 
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -421,74 +421,70 @@
                     <strong>原因:</strong><br>${message}<br><br>
                     <strong>チェックリスト:</strong><br>
                     ・GitHubに <code>${CSV_FILE_NAME}</code> が同じフォルダ内にアップロードされているか確認してください。<br>
-                    ・大文字・小文字（DATA2.CSV など）が一致しているか確認してください。
+                    ・大文字・小文字が一致しているか確認してください。
                 </div>
             `;
         }
 
-        function parseCSVLine(line) {
-            const pattern = /(?:"([^"]*(?:""[^"]*)*)"|([^",\r\n]*))\s*(?:,|$)/g;
-            const result = [];
-            let match;
+        // 🌟 改行入りのCSVデータにも完全対応した最強のパース処理
+        function parseCSV(text) {
+            rawDatabase = [];
             
-            while ((match = pattern.exec(line)) !== null) {
-                if (match.index === pattern.lastIndex) {
-                    pattern.lastIndex++;
+            // 正規表現でセルを抽出（改行を含めてダブルクォーテーションを認識）
+            const matches = text.matchAll(/(?:"([^"]*(?:""[^"]*)*)"|([^",\r\n]*))\s*(?:, |[\,])?|(\r?\n)/g);
+            
+            let currentRow = [];
+            
+            for (const match of matches) {
+                if (match[3] !== undefined) {
+                    // 改行を見つけたら、現在の行を処理してリセット
+                    processRow(currentRow);
+                    currentRow = [];
+                    continue;
                 }
-                let value = match[1] !== undefined ? match[1].replace(/""/g, '"') : match[2];
-                result.push(value ? value.trim() : '');
-                if (match.index + match[0].length >= line.length) {
-                    break;
-                }
+                
+                let value = (match[1] !== undefined) ? match[1].replace(/""/g, '"') : match[2];
+                value = value ? value.trim() : '';
+                currentRow.push(value);
             }
-            return result;
+            
+            // 最後の行の処理
+            if (currentRow.length > 0) {
+                processRow(currentRow);
+            }
         }
 
-        function parseCSV(text) {
-            const lines = text.split(/\r?\n/);
-            if (lines.length === 0) return;
+        function processRow(parts) {
+            if (parts.length < 8) return;
 
-            let startRow = 0;
-            if(lines[0].includes('問題番号') || lines[0].includes('章')) startRow = 1;
+            // ヘッダー行をスキップ
+            if (parts[0].includes('問題番号') || parts[0].includes('章')) return;
 
-            rawDatabase = [];
+            const no = parseInt(parts[0]);
+            if (isNaN(no)) return;
 
-            for (let i = startRow; i < lines.length; i++) {
-                try {
-                    const line = lines[i].trim();
-                    if (!line) continue;
+            const chString = parts[1].match(/\d+/);
+            const chNum = chString ? parseInt(chString[0]) : 8;
+            const chText = parts[1] || `第${chNum}章`;
 
-                    const parts = parseCSVLine(line);
-                    if (parts.length >= 8) {
-                        const no = parseInt(parts[0]);
-                        if (isNaN(no)) continue;
+            let q = parts[2];
+            if (!q) return;
+            
+            q = q.replace(/【(.*?)】/g, '$1');
+            q = q.replace(/^第\d+章：[^,.]+[.,、]/, '').trim(); 
 
-                        const chString = parts[1].match(/\d+/);
-                        const chNum = chString ? parseInt(chString[0]) : 8;
-                        const chText = parts[1] || `第${chNum}章`;
+            const c1 = parts[3] || '';
+            const c2 = parts[4] || '';
+            const c3 = parts[5] || '';
+            const c4 = parts[6] || '';
+            
+            let ans = parts[7] || '1';
+            ans = ans.replace(/,/g, '・').replace(/\//g, '・').replace(/、/g, '・');
 
-                        let q = parts[2];
-                        if (!q) continue;
-                        
-                        q = q.replace(/【(.*?)】/g, '$1');
-                        q = q.replace(/^第\d+章：[^,.]+[.,、]/, '').trim(); 
+            // 8列目以降に解説文がある場合、または改行で結合された残りの列がある場合に対応
+            const exp = parts.length >= 9 ? parts.slice(8).join(' ').trim() : '解説はありません。';
 
-                        const c1 = parts[3] || '';
-                        const c2 = parts[4] || '';
-                        const c3 = parts[5] || '';
-                        const c4 = parts[6] || '';
-                        
-                        let ans = parts[7] || '1';
-                        ans = ans.replace(/,/g, '・').replace(/\//g, '・').replace(/、/g, '・');
-
-                        const exp = parts.length >= 9 ? parts.slice(8).join(' ').trim() : '解説はありません。';
-
-                        rawDatabase.push({ ch: chNum, chText, no, q, c1, c2, c3, c4, ans, exp });
-                    }
-                } catch (e) {
-                    console.warn(`行 ${i + 1} の解析をスキップしました:`, e);
-                }
-            }
+            rawDatabase.push({ ch: chNum, chText, no, q, c1, c2, c3, c4, ans, exp });
         }
 
         function toggleAllChapters(masterCanvas) {
