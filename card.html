@@ -58,7 +58,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
         
-        /* タイトルと全章ボタンを横並びにするヘッダー */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -67,7 +66,6 @@
         }
         .section-header h3 { margin: 0; font-size: 0.9rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.05em; }
         
-        /* 全章チェックボックスの独立スタイル */
         .all-select-label {
             display: inline-flex;
             align-items: center;
@@ -114,6 +112,15 @@
             background-color: #EBF5FB;
             border-color: var(--accent-blue);
             color: var(--accent-blue);
+        }
+
+        /* 第10章 未実装のロックスタイル */
+        .btn-label.disabled {
+            background-color: #E9ECEF !important;
+            border-color: #CED4DA !important;
+            color: #6C757D !important;
+            cursor: not-allowed !important;
+            opacity: 0.6;
         }
 
         .start-btn {
@@ -248,7 +255,7 @@
                     <label class="btn-label"><input type="checkbox" name="chapter" value="7" checked onchange="onIndividualChange()">第7章 炎症</label>
                     <label class="btn-label"><input type="checkbox" name="chapter" value="8" checked onchange="onIndividualChange()">第8章 腫瘍</label>
                     <label class="btn-label"><input type="checkbox" name="chapter" value="9" checked onchange="onIndividualChange()">第9章 免疫</label>
-                    <label class="btn-label"><input type="checkbox" name="chapter" value="10" checked onchange="onIndividualChange()">第10章 先天異常</label>
+                    <label class="btn-label disabled"><input type="checkbox" name="chapter" value="10" disabled onchange="onIndividualChange()">第10章 先天異常（未配信）</label>
                 </div>
             </section>
 
@@ -331,7 +338,6 @@
             fetchCSV();
         });
 
-        // data.csv を読み込む形に戻しました
         function fetchCSV() {
             fetch('data.csv')
                 .then(response => {
@@ -349,35 +355,46 @@
                 });
         }
 
+        // 安全なCSVパース処理（カンマの誤分割対策）
         function parseCSV(text) {
             const lines = text.split(/\r?\n/);
+            if (lines.length === 0) return;
+
             let startRow = 0;
             if(lines[0].includes('ch') || lines[0].includes('q')) startRow = 1;
 
             for (let i = startRow; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                const parts = line.split(',');
-                if (parts.length >= 4) {
-                    rawDatabase.push({
-                        ch: parseInt(parts[0].trim()),
-                        no: parseInt(parts[1].trim()),
-                        q: parts[2].trim(),
-                        a: parts[3].trim()
-                    });
+
+                // 最初の2つのカンマだけを切り出し、残りはすべて「解答・解説」として結合する安全設計
+                const firstComma = line.indexOf(',');
+                const secondComma = line.indexOf(',', firstComma + 1);
+                const thirdComma = line.indexOf(',', secondComma + 1);
+
+                if (firstComma !== -1 && secondComma !== -1 && thirdComma !== -1) {
+                    const ch = parseInt(line.substring(0, firstComma).trim());
+                    const no = parseInt(line.substring(firstComma + 1, secondComma).trim());
+                    const q = line.substring(secondComma + 1, thirdComma).trim();
+                    const a = line.substring(thirdComma + 1).trim(); // 残り全てを解答にする
+
+                    if (!isNaN(ch) && q) {
+                        rawDatabase.push({ ch, no, q, a });
+                    }
                 }
             }
         }
 
         function toggleAllChapters(masterCanvas) {
-            const checkboxes = document.querySelectorAll('input[name="chapter"]');
+            // ロックされていない（有効な）チェックボックスのみを全選択の対象にする
+            const checkboxes = document.querySelectorAll('input[name="chapter"]:not(:disabled)');
             checkboxes.forEach(cb => {
                 cb.checked = masterCanvas.checked;
             });
         }
 
         function onIndividualChange() {
-            const checkboxes = document.querySelectorAll('input[name="chapter"]');
+            const checkboxes = document.querySelectorAll('input[name="chapter"]:not(:disabled)');
             const allCheckbox = document.getElementById('all-chapters-checkbox');
             
             const total = checkboxes.length;
@@ -452,7 +469,7 @@
         function showQuestion() {
             isAnswerRevealed = false;
             const currentItem = quizQueue[currentIndex];
-            const chapterNames = { 7: "炎症", 8: "腫瘍", 9: "免疫", 10: "先天異常" };
+            const chapterNames = { 7: "炎症", 8: "腫瘍", 9: "免疫異常・アレルギー", 10: "先天異常" };
 
             document.getElementById("current-index").innerText = `第 ${currentIndex + 1} 問 / 全 ${quizQueue.length} 問`;
             document.getElementById("current-score").innerText = `正解: ${score}`;
