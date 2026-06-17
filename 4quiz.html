@@ -9,36 +9,48 @@
             --primary: #3498db;
             --primary-light: #ebf5fb;
             --success: #2ecc71;
+            --success-light: #e8f8f5;
+            --error: #e74c3c;
+            --error-light: #fadbd8;
             --bg: #f4f7f6;
             --card: #ffffff;
             --text: #2c3e50;
+            --text-dim: #7f8c8d;
             --border: #e1e8ed;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: var(--card); padding: 30px 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border); }
         h1 { font-size: 1.6rem; font-weight: 800; text-align: center; margin-top: 0; margin-bottom: 25px; }
-        .section-title { font-size: 0.9rem; font-weight: bold; color: #7f8c8d; margin: 20px 0 8px; }
+        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px; }
         
-        /* 章選択のグリッド */
+        /* 設定画面のスタイル */
         .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-check { padding: 12px; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
         .btn-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-        .btn-all { grid-column: span 3; margin-top: 5px; }
-        
-        /* セレクトボックス・入力エリア */
+        .btn-all { grid-column: span 3; margin-top: 5px; background: #fafafa; }
         select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; background: white; font-size: 1rem; font-weight: bold; color: var(--text); outline: none; }
-        select:focus { border-color: var(--primary); }
-        
-        /* スタートボタン */
         .start-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2); }
-        .start-btn:hover { background: #2980b9; }
-
-        /* クイズ画面 */
+        
+        /* クイズ画面のスタイル */
         #quiz-area { display: none; }
-        .progress-bar { font-size: 0.85rem; color: #7f8c8d; font-weight: bold; margin-bottom: 10px; }
+        .progress-bar { font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 10px; }
         .question-box { font-size: 1.1rem; font-weight: bold; line-height: 1.5; margin-bottom: 25px; min-height: 60px; }
+        
         .choice-btn { display: block; width: 100%; padding: 14px 18px; margin: 10px 0; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; text-align: left; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
-        .choice-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+        .choice-btn:disabled { cursor: default; }
+        
+        /* 正誤判定の判定色 */
+        .choice-btn.correct { border-color: var(--success) !important; background: var(--success-light) !important; color: #117a65; }
+        .choice-btn.wrong { border-color: var(--error) !important; background: var(--error-light) !important; color: #78281f; }
+        
+        /* 解説エリア */
+        .explanation-zone { display: none; background: #f8f9fa; border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-top: 20px; animation: fadeIn 0.3s ease; }
+        .feedback-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
+        .feedback-title.ok { color: var(--success); }
+        .feedback-title.ng { color: var(--error); }
+        .next-btn { width: 100%; padding: 14px; background: var(--text); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -73,109 +85,8 @@
 
 <div class="container" id="quiz-area">
     <div class="progress-bar" id="progress">第 1 問 / 全 10 問</div>
-    <div class="question-box" id="q-text">問題文がここに表示されます。</div>
+    <div class="question-box" id="q-text">問題文</div>
     <div id="choices-area"></div>
-</div>
-
-<script>
-    let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
-
-    // CSV読み込み（列のズレに自動対応するロジック）
-    fetch('data2.csv')
-        .then(r => r.text())
-        .then(text => {
-            const lines = text.split(/\r?\n/).filter(l => l.trim());
-            allData = lines.map(line => {
-                const p = line.split(',');
-                // 行の中から「8」「9」「10」の章番号が含まれているセルを自動探索
-                let chNum = 0;
-                if (p[0] && (p[0].includes('8') || p[0].includes('9') || p[0].includes('10'))) chNum = parseInt(p[0].match(/\d+/)[0]);
-                else if (p[1] && (p[1].includes('8') || p[1].includes('9') || p[1].includes('10'))) chNum = parseInt(p[1].match(/\d+/)[0]);
-                
-                return { 
-                    ch: chNum, 
-                    q: p[2] || '', 
-                    c: [p[3]||'', p[4]||'', p[5]||'', p[6]||''], 
-                    ans: p[7] ? p[7].trim() : '1', 
-                    exp: p[8] || '' 
-                };
-            }).filter(item => item.ch > 0); // 章が判定できたデータのみ残す
-        });
-
-    function toggleChapter(btn) {
-        const ch = parseInt(btn.dataset.ch);
-        if (selectedChapters.has(ch)) {
-            selectedChapters.delete(ch);
-            btn.classList.remove('active');
-        } else {
-            selectedChapters.add(ch);
-            btn.classList.add('active');
-        }
-    }
-
-    function selectAllChapters() {
-        const buttons = document.querySelectorAll('.chapter-grid .btn-check:not(.btn-all)');
-        buttons.forEach(btn => {
-            const ch = parseInt(btn.dataset.ch);
-            selectedChapters.add(ch);
-            btn.classList.add('active');
-        });
-    }
-
-    function startQuiz() {
-        if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
-        
-        // 章フィルター
-        let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。CSVの1列目か2列目に章番号を入れてください。");
-
-        // 出題順序の処理
-        const order = document.getElementById('order-q').value;
-        if (order === 'random') {
-            filtered.sort(() => Math.random() - 0.5);
-        }
-
-        // 問題数の処理
-        const numSelect = document.getElementById('num-q').value;
-        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
-        
-        quizQueue = filtered.slice(0, count);
-        currentIdx = 0;
-
-        document.getElementById('setup-area').style.display = 'none';
-        document.getElementById('quiz-area').style.display = 'block';
-        showQ();
-    }
-
-    function showQ() {
-        const q = quizQueue[currentIdx];
-        document.getElementById('progress').innerText = `第 ${currentIdx + 1} 問 / 全 ${quizQueue.length} 問`;
-        document.getElementById('q-text').innerText = q.q;
-        
-        const area = document.getElementById('choices-area');
-        area.innerHTML = '';
-        
-        q.c.forEach((choice, i) => {
-            if(!choice) return;
-            const btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice;
-            btn.onclick = () => {
-                if (parseInt(q.ans) === i + 1) {
-                    alert("⭕ 正解！\n\n【解説】\n" + q.exp);
-                } else {
-                    alert(`❌ 不正解...\n正解は [ ${q.c[parseInt(q.ans)-1]} ] です。\n\n【解説】\n` + q.exp);
-                }
-                currentIdx++;
-                if (currentIdx < quizQueue.length) showQ();
-                else {
-                    alert("🎉 すべての問題が終了しました！設定画面に戻ります。");
-                    location.reload();
-                }
-            };
-            area.appendChild(btn);
-        });
-    }
-</script>
-</body>
-</html>
+    
+    <div class="explanation-zone" id="explanation-zone">
+        <div class="feedback-title" id="feedback-title">⭕
