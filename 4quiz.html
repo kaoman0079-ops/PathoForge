@@ -68,23 +68,43 @@
             <div class="flash-card"><h2>演習終了！</h2><button class="start-btn" onclick="location.reload()">もう一度</button></div>
         </div>
     </div>
-    <script>
+   <script>
         let rawDatabase = [], quizQueue = [], currentIndex = 0, score = 0, selectedChoice = null;
         const CSV_FILE_NAME = 'data2.csv';
 
         fetch(CSV_FILE_NAME)
             .then(r => r.text())
             .then(text => {
-                const lines = text.split('\n');
-                lines.forEach(line => {
+                const lines = text.split(/\r?\n/); // 改行コードの違いに対応
+                lines.forEach((line, index) => {
+                    if (index === 0) return; // 1行目がヘッダー（項目名）ならスキップ
                     const parts = line.split(',');
-                    if (parts.length >= 8) rawDatabase.push({ q: parts[2], c1: parts[3], c2: parts[4], c3: parts[5], c4: parts[6], ans: parts[7].trim(), exp: parts[8] });
+                    if (parts.length >= 8) {
+                        rawDatabase.push({ 
+                            q: parts[2], 
+                            c1: parts[3], 
+                            c2: parts[4], 
+                            c3: parts[5], 
+                            c4: parts[6], 
+                            ans: parts[7].trim(), 
+                            exp: parts[8] || '解説はありません。' 
+                        });
+                    }
                 });
-                quizQueue = rawDatabase.sort(() => Math.random() - 0.5).slice(0, 10);
-                document.getElementById('loading-view').style.display = 'none';
-                document.getElementById('setup-view').style.display = 'block';
+                if (rawDatabase.length > 0) {
+                    quizQueue = rawDatabase.sort(() => Math.random() - 0.5).slice(0, 10);
+                    document.getElementById('loading-view').style.display = 'none';
+                    document.getElementById('setup-view').style.display = 'block';
+                } else {
+                    document.getElementById('loading-view').innerText = "⚠️ データが見つかりませんでした。CSV形式を確認してください。";
+                }
+            })
+            .catch(err => {
+                document.getElementById('loading-view').innerText = "⚠️ 読み込みエラーが発生しました。";
+                console.error(err);
             });
 
+        // 以下は以前と同じ関数
         function startQuiz() { document.getElementById('setup-view').style.display = 'none'; document.getElementById('quiz-view').style.display = 'block'; showQuestion(); }
         
         function showQuestion() {
@@ -95,6 +115,7 @@
                 btn.innerText = q[`c${i}`]; btn.className = "choice-btn"; btn.disabled = false;
             }
             document.getElementById('action-btn').disabled = true;
+            selectedChoice = null; // 選択をリセット
         }
 
         function toggleChoice(n) {
@@ -111,6 +132,9 @@
             document.getElementById('explanation-text').innerText = q.exp;
             document.getElementById('explanation-zone').style.display = 'block';
             document.getElementById('action-btn').style.display = 'none';
+            // 正誤に応じたボタン色分け処理
+            document.getElementById(`choice${selectedChoice}`).classList.add(isCorrect ? 'correct-ans' : 'wrong-ans');
+            if(!isCorrect) document.getElementById(`choice${q.ans}`).classList.add('correct-ans');
         }
 
         function goToNext() {
@@ -124,6 +148,5 @@
                 document.getElementById('result-view').style.display = 'block';
             }
         }
-    </script>
-</body>
+    </script></body>
 </html>
