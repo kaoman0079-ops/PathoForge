@@ -393,7 +393,7 @@
             fetch(CSV_FILE_NAME)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`ファイル「${CSV_FILE_NAME}」がサーバー上に見つからないか、読み込めませんでした。(Status: ${response.status})`);
+                        throw new Error(`ファイル「${CSV_FILE_NAME}」が見つからないか、読み込めませんでした。(Status: ${response.status})`);
                     }
                     return response.text();
                 })
@@ -402,7 +402,7 @@
                     document.getElementById('loading-view').style.display = 'none';
                     
                     if (rawDatabase.length === 0) {
-                        showLoadingError(`CSVファイルは読み込めましたが、有効な問題データが1件も抽出できませんでした。データ形式を確認してください。`);
+                        showLoadingError(`CSVファイルは読み込めましたが、有効な問題データが1件も抽出できませんでした。データの中身、または1列目が「数字」になっているか確認してください。`);
                     } else {
                         document.getElementById('setup-view').style.display = 'block';
                     }
@@ -420,58 +420,50 @@
                 <div class="error-container">
                     <strong>原因:</strong><br>${message}<br><br>
                     <strong>チェックリスト:</strong><br>
-                    ・GitHubに <code>${CSV_FILE_NAME}</code> が同じフォルダ内にアップロードされているか確認してください。<br>
-                    ・大文字・小文字が一致しているか確認してください。
+                    ・CSVの1列目が半角の「数字」から始まっているか確認してください。<br>
+                    ・Excelで保存した際、文字コードが「UTF-8」になっているか確認してください。
                 </div>
             `;
         }
 
-        // 🌟 改行入りのCSVデータにも完全対応した最強のパース処理
         function parseCSV(text) {
             rawDatabase = [];
-            
-            // 正規表現でセルを抽出（改行を含めてダブルクォーテーションを認識）
             const matches = text.matchAll(/(?:"([^"]*(?:""[^"]*)*)"|([^",\r\n]*))\s*(?:, |[\,])?|(\r?\n)/g);
-            
             let currentRow = [];
             
             for (const match of matches) {
                 if (match[3] !== undefined) {
-                    // 改行を見つけたら、現在の行を処理してリセット
                     processRow(currentRow);
                     currentRow = [];
                     continue;
                 }
-                
                 let value = (match[1] !== undefined) ? match[1].replace(/""/g, '"') : match[2];
                 value = value ? value.trim() : '';
                 currentRow.push(value);
             }
-            
-            // 最後の行の処理
             if (currentRow.length > 0) {
                 processRow(currentRow);
             }
         }
 
         function processRow(parts) {
-            if (parts.length < 8) return;
+            if (parts.length < 5 || !parts[0]) return;
 
-            // ヘッダー行をスキップ
-            if (parts[0].includes('問題番号') || parts[0].includes('章')) return;
+            if (parts[0].includes('問題番号') || parts[0].includes('章') || parts[2] === '問題文') return;
 
-            const no = parseInt(parts[0]);
-            if (isNaN(no)) return;
+            const noMatch = parts[0].match(/\d+/);
+            const no = noMatch ? parseInt(noMatch[0]) : rawDatabase.length + 1;
 
-            const chString = parts[1].match(/\d+/);
-            const chNum = chString ? parseInt(chString[0]) : 8;
-            const chText = parts[1] || `第${chNum}章`;
+            let chNum = 8;
+            let chText = parts[1] || '第8章';
+            if (parts[1]) {
+                const chString = parts[1].match(/\d+/);
+                if (chString) chNum = parseInt(chString[0]);
+            }
 
             let q = parts[2];
             if (!q) return;
-            
-            q = q.replace(/【(.*?)】/g, '$1');
-            q = q.replace(/^第\d+章：[^,.]+[.,、]/, '').trim(); 
+            q = q.replace(/【(.*?)】/g, '$1').trim();
 
             const c1 = parts[3] || '';
             const c2 = parts[4] || '';
@@ -481,7 +473,6 @@
             let ans = parts[7] || '1';
             ans = ans.replace(/,/g, '・').replace(/\//g, '・').replace(/、/g, '・');
 
-            // 8列目以降に解説文がある場合、または改行で結合された残りの列がある場合に対応
             const exp = parts.length >= 9 ? parts.slice(8).join(' ').trim() : '解説はありません。';
 
             rawDatabase.push({ ch: chNum, chText, no, q, c1, c2, c3, c4, ans, exp });
