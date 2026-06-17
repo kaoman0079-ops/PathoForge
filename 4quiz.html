@@ -152,4 +152,94 @@
         if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
         
         let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("
+        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
+
+        const order = document.getElementById('order-q').value;
+        if (order === 'random') {
+            filtered.sort(() => Math.random() - 0.5);
+        }
+
+        const numSelect = document.getElementById('num-q').value;
+        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
+        
+        quizQueue = filtered.slice(0, count);
+        currentIdx = 0;
+
+        document.getElementById('setup-area').style.display = 'none';
+        document.getElementById('quiz-area').style.display = 'block';
+        showQ();
+    }
+
+    function showQ() {
+        document.getElementById('explanation-zone').style.display = 'none';
+        
+        const q = quizQueue[currentIdx];
+        document.getElementById('progress').innerText = `第 ${currentIdx + 1} 問 / 全 ${quizQueue.length} 問`;
+        document.getElementById('q-text').innerText = q.q;
+        
+        const area = document.getElementById('choices-area');
+        area.innerHTML = '';
+        
+        q.c.forEach((choice, i) => {
+            if(!choice) return;
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice;
+            
+            btn.onclick = () => {
+                const allButtons = area.querySelectorAll('.choice-btn');
+                allButtons.forEach(b => b.disabled = true);
+                
+                const isCorrect = (parseInt(q.ans) === i + 1);
+                
+                if (isCorrect) {
+                    btn.classList.add('correct');
+                    document.getElementById('feedback-title').innerText = "⭕ 正解！";
+                    document.getElementById('feedback-title').className = "feedback-title ok";
+                } else {
+                    btn.classList.add('wrong');
+                    document.getElementById('feedback-title').innerText = "❌ 不正解...";
+                    document.getElementById('feedback-title').className = "feedback-title ng";
+                    
+                    // 正解のボタン番号が存在しているか確認してから色を変える（エラー防止）
+                    const ansIndex = parseInt(q.ans) - 1;
+                    if(allButtons[ansIndex]) {
+                        allButtons[ansIndex].classList.add('correct');
+                    }
+                }
+                
+                document.getElementById('explanation-text').innerText = q.exp;
+                
+                // 最終問題かどうかに応じてボタンの文字を変える
+                const nextBtn = document.getElementById('next-action-btn');
+                if (currentIdx === quizQueue.length - 1) {
+                    nextBtn.innerText = "演習を終了して設定に戻る ➔";
+                } else {
+                    nextBtn.innerText = "次の問題へ ➔";
+                }
+                
+                document.getElementById('explanation-zone').style.display = 'block';
+            };
+            area.appendChild(btn);
+        });
+    }
+
+    function goToNext() {
+        currentIdx++;
+        if (currentIdx < quizQueue.length) {
+            showQ();
+        } else {
+            resetToPortal();
+        }
+    }
+
+    // 設定画面（ポータル）にいつでも戻れる関数
+    function resetToPortal() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('setup-area').style.display = 'block';
+        // 選択状況などをリセット
+        currentIdx = 0;
+    }
+</script>
+</body>
+</html>
