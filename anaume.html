@@ -13,7 +13,8 @@
             --text-main: #2C3E50;
             --text-dim: #7F8C8D;
             --border-color: #E1E8ED;
-            --mask-color: #2F3542; /* MedBlank風の引き締まったマスクカラー */
+            --mask-closed: #2F3542; /* 閉じている時の引き締まったマスク色 */
+            --mask-open-text: #1a73e8; /* 開いた時の見やすいブルー */
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -38,32 +39,47 @@
 
         /* クイズ画面 */
         #quiz-area { display: none; }
-        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 260px; display: flex; flex-direction: column; justify-content: space-between; }
+        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 280px; display: flex; flex-direction: column; justify-content: space-between; }
         
         .card-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; }
         
-        /* 問題文テキスト */
-        .question-body { font-size: 1.2rem; font-weight: 700; line-height: 1.8; color: var(--text-main); margin-bottom: 40px; min-height: 100px; word-break: break-all; }
+        /* 改良：問題文テキスト（フォントサイズ・太さ・行間を最適化） */
+        .question-body { 
+            font-size: 1.1rem; 
+            font-weight: 500; 
+            line-height: 2.1; 
+            color: var(--text-main); 
+            margin-bottom: 35px; 
+            min-height: 120px; 
+            word-break: break-all;
+            letter-spacing: 0.03em;
+        }
 
-        /* 穴埋めマスク（MedBlank仕様） */
+        /* 改良：穴埋めマスク（閉じている時はスマートな黒系の目隠し） */
         .blank-mask { 
-            background-color: var(--mask-color); 
-            color: var(--mask-color); 
-            border-radius: 6px; 
-            padding: 2px 10px; 
-            margin: 0 4px; 
+            background-color: var(--mask-closed); 
+            color: var(--mask-closed); 
+            border-radius: 4px; 
+            padding: 1px 8px; 
+            margin: 0 2px; 
             cursor: pointer; 
             display: inline-block; 
             transition: all 0.15s ease; 
             user-select: none; 
-            border-bottom: 3px solid rgba(0,0,0,0.3);
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+            vertical-align: middle;
+            line-height: 1.2;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
         }
-        /* タップして開いた時 */
+        
+        /* 改良：タップして開いた時（背景を透明にし、文章に馴染むように変更！） */
         .blank-mask.is-open { 
-            background-color: var(--primary-light); 
-            color: #2980b9; 
-            border-bottom: 3px solid var(--primary); 
+            background-color: transparent; 
+            color: var(--mask-open-text); 
+            font-weight: 700;
+            border-bottom: 2px solid var(--mask-open-text); 
+            border-radius: 0;
+            padding: 1px 4px;
+            margin: 0 4px;
             user-select: text;
             box-shadow: none;
         }
@@ -79,7 +95,7 @@
         @media (max-width: 480px) {
             body { padding: 10px; }
             .quiz-card { padding: 25px 18px; }
-            .question-body { font-size: 1.1rem; line-height: 1.7; }
+            .question-body { font-size: 1.05rem; line-height: 2.0; }
         }
     </style>
 </head>
@@ -177,7 +193,7 @@
         return rows;
     }
 
-    // ★修正：anadata.csv から正しく読み込むように変更
+    // anadata.csv から読み込み
     fetch('anadata.csv')
         .then(r => r.text())
         .then(text => {
