@@ -13,7 +13,7 @@
             --text-main: #2C3E50;
             --text-dim: #7F8C8D;
             --border-color: #E1E8ED;
-            --mask-color: #2C3E50; /* マスクのシックな黒色 */
+            --mask-color: #2F3542; /* MedBlank風の引き締まったマスクカラー */
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -26,7 +26,7 @@
         .nav-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .back-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 
-        /* 設定画面のスタイル */
+        /* 設定画面 */
         h1 { font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--text-main); }
         .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px 5px; }
         .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -36,21 +36,39 @@
         select { width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; font-size: 1rem; font-weight: bold; color: var(--text-main); outline: none; }
         .start-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2); }
 
-        /* メインのクイズビュー（MedBlank風の極上デザイン） */
+        /* クイズ画面（MedBlankデザインを完全インスパイア） */
         #quiz-area { display: none; }
-        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 240px; display: flex; flex-direction: column; justify-content: space-between; }
+        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 260px; display: flex; flex-direction: column; justify-content: space-between; }
         
-        /* カード上部のメタ情報 */
         .card-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; }
         
-        /* 問題本文エリア */
-        .question-body { font-size: 1.25rem; font-weight: 700; line-height: 1.7; color: var(--text-main); margin-bottom: 40px; min-height: 80px; word-break: break-all; }
+        /* 問題文テキスト */
+        .question-body { font-size: 1.2rem; font-weight: 700; line-height: 1.8; color: var(--text-main); margin-bottom: 40px; min-height: 100px; word-break: break-all; }
 
-        /* ★ 穴埋めマスクの魔法のCSS */
-        .blank-mask { background-color: var(--mask-color); color: var(--mask-color); border-radius: 6px; padding: 0 8px; margin: 0 3px; cursor: pointer; display: inline-block; transition: all 0.15s ease; user-select: none; border-bottom: 2px solid rgba(0,0,0,0.2); }
-        .blank-mask.is-open { background-color: var(--primary-light); color: var(--primary); border-bottom: 2px solid var(--primary); user-select: text; }
+        /* ★ 特製：穴埋めマスクCSS（MedBlank仕様） */
+        .blank-mask { 
+            background-color: var(--mask-color); 
+            color: var(--mask-color); 
+            border-radius: 6px; 
+            padding: 2px 10px; 
+            margin: 0 4px; 
+            cursor: pointer; 
+            display: inline-block; 
+            transition: all 0.15s ease; 
+            user-select: none; 
+            border-bottom: 3px solid rgba(0,0,0,0.3);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+        /* タップして開いた時のスタイル */
+        .blank-mask.is-open { 
+            background-color: var(--primary-light); 
+            color: #2980b9; 
+            border-bottom: 3px solid var(--primary); 
+            user-select: text;
+            box-shadow: none;
+        }
 
-        /* 下部ボタンエリア */
+        /* 下部ボタン */
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .action-btn { padding: 14px; border-radius: 14px; font-weight: bold; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; border: none; }
         .btn-reveal { background-color: var(--card-bg); color: var(--text-main); border: 2px solid var(--border-color); }
@@ -60,8 +78,8 @@
 
         @media (max-width: 480px) {
             body { padding: 10px; }
-            .quiz-card { padding: 20px 15px; }
-            .question-body { font-size: 1.15rem; }
+            .quiz-card { padding: 25px 18px; }
+            .question-body { font-size: 1.1rem; line-height: 1.7; }
         }
     </style>
 </head>
@@ -121,27 +139,46 @@
 <script>
     let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
 
-    // CSV読み込み（パース処理の強化）
+    // CSVのカンマやダブルクォーテーションを綺麗に処理するパース関数
+    function parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    // CSV読み込み（列位置の修正とクォート対応）
     fetch('data2.csv')
         .then(r => r.text())
         .then(text => {
             const lines = text.split(/\r?\n/).filter(l => l.trim());
+            // ヘッダー行があれば飛ばす
+            if (lines[0].includes('chapter')) lines.shift();
+
             allData = lines.map(line => {
-                // カンマで分割
-                const p = line.split(',');
-                let chNum = 0;
-                
-                // 1列目か2列目から章番号（数字）を確実に抽出
-                const chSource = (p[0] || '') + (p[1] || '');
-                const match = chSource.match(/\d+/);
-                if (match) chNum = parseInt(match[0]);
+                const p = parseCSVLine(line);
+                if (p.length < 3) return null;
+
+                let chNum = parseInt(p[0]) || 0;
                 
                 return { 
                     ch: chNum, 
-                    q: p[2] || '', // ここに "腸上皮|胃潰瘍" や文章が入っている
-                    exp: p[8] || '解説は登録されていません。' 
+                    q: p[1] || '',  /* 2列目：問題文（〔 ? 〕入り） */
+                    ans: p[2] || '' /* 3列目：答え（パイプ区切り） */
                 };
-            }).filter(item => item.ch > 0);
+            }).filter(item => item && item.ch > 0);
         });
 
     function toggleChapter(btn) {
@@ -168,9 +205,8 @@
         if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
         
         let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
+        if (filtered.length === 0) return alert("選択した章の問題が見取れません。");
 
-        // 穴埋めは基本的にシャッフル（ランダム）
         filtered.sort(() => Math.random() - 0.5);
 
         const numSelect = document.getElementById('num-q').value;
@@ -184,67 +220,11 @@
         showQ();
     }
 
-    // ★ パイプライン「|」を検知して美しい穴埋めパーツに変換する関数
-    function parseToBlank(text) {
-        if (!text.includes('|')) {
-            // もし「|」が含まれない通常の文章なら全体をマスクにするか、そのまま返す
-            return `<span class="blank-mask" onclick="toggleMask(this)">${text}</span>`;
-        }
+    // ★ 〔 ? 〕を見つけて答えの単語を埋め込んだマスクに置換するコアロジック
+    function injectBlanks(qText, aText) {
+        const answers = aText.split('|');
+        let ansIdx = 0;
         
-        const parts = text.split('|');
-        return parts.map((part, index) => {
-            if (text.startsWith('|') ? index % 2 === 0 : index % 2 === 1) {
-                // 奇数番目（または区切られたキーワード）をマスク化
-                return `<span class="blank-mask" onclick="toggleMask(this)">${part}</span>`;
-            } else {
-                // 地の文（もしあれば）
-                return part;
-            }
-        }).join('');
-    }
-
-    function showQ() {
-        const q = quizQueue[currentIdx];
-        
-        document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
-        document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
-        
-        // テキストをパースしてカードに注入
-        document.getElementById('q-text').innerHTML = parseToBlank(q.q);
-        
-        const nextBtn = document.getElementById('next-action-btn');
-        if (currentIdx === quizQueue.length - 1) {
-            nextBtn.innerText = "演習を終了 ➔";
-        } else {
-            nextBtn.innerText = "次のカード ➔";
-        }
-    }
-
-    // マスクを個別にクリックしたときの開閉
-    function toggleMask(el) {
-        el.classList.toggle('is-open');
-    }
-
-    // 「答えを表示」で一括オープン
-    function revealAll() {
-        const masks = document.querySelectorAll('.blank-mask');
-        masks.forEach(m => m.classList.add('is-open'));
-    }
-
-    function goToNext() {
-        currentIdx++;
-        if (currentIdx < quizQueue.length) {
-            showQ();
-        } else {
-            resetToPortal();
-        }
-    }
-
-    function resetToPortal() {
-        document.getElementById('quiz-area').style.display = 'none';
-        document.getElementById('setup-area').style.display = 'block';
-        currentIdx = 0;
-    }
-</script>
-</body>
-</html>
+        // 表記揺れ（〔?〕や〔 ? 〕など）に対応する正規表現
+        return qText.replace(/〔\s*\?\s*〕/g, () => {
+            const currentAnswer = answers
