@@ -227,4 +227,53 @@
         
         // 表記揺れ（〔?〕や〔 ? 〕など）に対応する正規表現
         return qText.replace(/〔\s*\?\s*〕/g, () => {
-            const currentAnswer = answers
+            const currentAnswer = answers[ansIdx++] || '？';
+            return `<span class="blank-mask" onclick="toggleMask(this)">${currentAnswer}</span>`;
+        });
+    }
+
+    function showQ() {
+        const q = quizQueue[currentIdx];
+        
+        document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
+        document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
+        
+        // 問題文テキストに答えをマスク化して注入
+        document.getElementById('q-text').innerHTML = injectBlanks(q.q, q.ans);
+        
+        const nextBtn = document.getElementById('next-action-btn');
+        if (currentIdx === quizQueue.length - 1) {
+            nextBtn.innerText = "演習を終了 ➔";
+        } else {
+            nextBtn.innerText = "次のカード ➔";
+        }
+    }
+
+    // マスクを個別にクリックしたときの開閉
+    function toggleMask(el) {
+        el.classList.toggle('is-open');
+    }
+
+    // 「答えを表示」で一括オープン
+    function revealAll() {
+        const masks = document.querySelectorAll('.blank-mask');
+        masks.forEach(m => m.classList.add('is-open'));
+    }
+
+    function goToNext() {
+        currentIdx++;
+        if (currentIdx < quizQueue.length) {
+            showQ();
+        } else {
+            resetToPortal();
+        }
+    }
+
+    function resetToPortal() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('setup-area').style.display = 'block';
+        currentIdx = 0;
+    }
+</script>
+</body>
+</html>
