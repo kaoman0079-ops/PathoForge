@@ -25,9 +25,9 @@
         h1 { font-size: 1.6rem; font-weight: 800; text-align: center; margin-top: 0; margin-bottom: 25px; }
         .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px; }
         
-        /* ポータルに戻るボタン（クイズ画面用） */
-        .back-to-portal { display: inline-flex; align-items: center; gap: 5px; background: #eee; color: var(--text); border: none; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; }
-        .back-to-portal:hover { background: #e0e0e0; }
+        /* 戻るボタンの共通スタイル */
+        .back-btn { display: inline-flex; align-items: center; gap: 5px; background: #eee; color: var(--text); border: none; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; text-decoration: none; }
+        .back-btn:hover { background: #e0e0e0; }
 
         /* 設定画面のスタイル */
         .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -63,6 +63,8 @@
 <body>
 
 <div class="container" id="setup-area">
+    <a href="https://kaoman0079-ops.github.io/PathoForge/" class="back-btn">➔ PathoForge トップに戻る</a>
+
     <h1>演習設定</h1>
     
     <div class="section-title">出題カテゴリ</div>
@@ -91,7 +93,7 @@
 </div>
 
 <div class="container" id="quiz-area">
-    <button class="back-to-portal" onclick="resetToPortal()">➔ 設定に戻る</button>
+    <button class="back-btn" onclick="resetToPortal()">➔ 設定に戻る</button>
 
     <div class="progress-bar" id="progress">第 1 問 / 全 10 問</div>
     <div class="question-box" id="q-text">問題文</div>
@@ -107,7 +109,7 @@
 <script>
     let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
 
-    // CSVの自動判別読み込み（1列目か2列目の章番号、3列目問題、4-7選択肢、8正解、9解説）
+    // CSVの自動判別読み込み
     fetch('data2.csv')
         .then(r => r.text())
         .then(text => {
@@ -201,7 +203,6 @@
                     document.getElementById('feedback-title').innerText = "❌ 不正解...";
                     document.getElementById('feedback-title').className = "feedback-title ng";
                     
-                    // 正解のボタン番号が存在しているか確認してから色を変える（エラー防止）
                     const ansIndex = parseInt(q.ans) - 1;
                     if(allButtons[ansIndex]) {
                         allButtons[ansIndex].classList.add('correct');
@@ -210,7 +211,6 @@
                 
                 document.getElementById('explanation-text').innerText = q.exp;
                 
-                // 最終問題かどうかに応じてボタンの文字を変える
                 const nextBtn = document.getElementById('next-action-btn');
                 if (currentIdx === quizQueue.length - 1) {
                     nextBtn.innerText = "演習を終了して設定に戻る ➔";
@@ -233,11 +233,9 @@
         }
     }
 
-    // 設定画面（ポータル）にいつでも戻れる関数
     function resetToPortal() {
         document.getElementById('quiz-area').style.display = 'none';
         document.getElementById('setup-area').style.display = 'block';
-        // 選択状況などをリセット
         currentIdx = 0;
     }
 </script>
