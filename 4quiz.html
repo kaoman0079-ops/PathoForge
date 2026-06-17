@@ -12,8 +12,8 @@
         .btn-check { padding: 12px; border: 2px solid var(--primary); border-radius: 12px; background: white; cursor: pointer; font-weight: bold; }
         .btn-check.active { background: var(--primary); color: white; }
         .start-btn { width: 100%; padding: 15px; background: #2ecc71; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        #quiz-area { display: none; }
-        .choice-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; }
+        #quiz-area { display: none; margin-top: 20px; }
+        .choice-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: left; }
     </style>
 </head>
 <body>
@@ -31,21 +31,23 @@
 </div>
 
 <div class="container" id="quiz-area">
-    <div id="quiz-content">
-        <div id="q-text" style="font-weight:bold; margin-bottom:15px;"></div>
-        <div id="choices-area"></div>
-    </div>
+    <div id="q-text" style="font-weight:bold; margin-bottom:15px;"></div>
+    <div id="choices-area"></div>
 </div>
 
 <script>
     let allData = [], quizQueue = [], currentIdx = 0, selected = new Set();
 
-    fetch('data2.csv').then(r => r.text()).then(text => {
-        allData = text.split('\n').slice(1).filter(l => l.trim()).map(line => {
-            const p = line.split(',');
-            return { ch: parseInt(p[1]), q: p[2], c: [p[3], p[4], p[5], p[6]], ans: p[7], exp: p[8] };
-        });
-    });
+    // CSV読み込み
+    fetch('data2.csv')
+        .then(r => r.text())
+        .then(text => {
+            allData = text.split('\n').slice(1).filter(l => l.trim()).map(line => {
+                const p = line.split(',');
+                return { ch: parseInt(p[1]), q: p[2], c: [p[3], p[4], p[5], p[6]], ans: p[7], exp: p[8] };
+            });
+        })
+        .catch(e => alert("CSVの読み込みに失敗しました。ファイル名を確認してください。"));
 
     function toggle(btn) {
         const ch = parseInt(btn.dataset.ch);
@@ -56,6 +58,8 @@
     function startQuiz() {
         if(selected.size === 0) return alert("章を選んでください");
         const filtered = allData.filter(d => selected.has(d.ch));
+        if(filtered.length === 0) return alert("選択した章に問題がありません");
+        
         const count = parseInt(document.getElementById('num-q').value);
         quizQueue = filtered.sort(() => Math.random() - 0.5).slice(0, count);
         
@@ -73,7 +77,12 @@
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.innerText = choice;
-            btn.onclick = () => alert(parseInt(q.ans) === i + 1 ? "正解！" : "残念！正解は" + q.ans);
+            btn.onclick = () => {
+                alert(parseInt(q.ans) === i + 1 ? "正解！" : "残念！正解は" + q.ans);
+                currentIdx++;
+                if(currentIdx < quizQueue.length) showQ();
+                else alert("終了！");
+            };
             area.appendChild(btn);
         });
     }
