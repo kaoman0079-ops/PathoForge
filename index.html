@@ -2,245 +2,114 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PathoForge クイズ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>病理学学習システム - PathoForge</title>
     <style>
         :root {
-            --primary: #3498db;
-            --primary-light: #ebf5fb;
-            --success: #2ecc71;
-            --success-light: #e8f8f5;
-            --error: #e74c3c;
-            --error-light: #fadbd8;
-            --bg: #f4f7f6;
-            --card: #ffffff;
-            --text: #2c3e50;
-            --text-dim: #7f8c8d;
-            --border: #e1e8ed;
+            --main-bg: #F4F6F9;
+            --card-bg: #FFFFFF;
+            --accent-purple: #6C5CE7;
+            --accent-blue: #2F3542;
+            --text-main: #2C3E50;
+            --text-dim: #7F8C8D;
+            --border-color: #E1E8ED;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: var(--card); padding: 30px 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; }
-        
-        /* ヘッダー・タイトル */
-        h1 { font-size: 1.6rem; font-weight: 800; text-align: center; margin-top: 0; margin-bottom: 25px; }
-        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px; }
-        
-        /* 戻るボタンの共通スタイル */
-        .back-btn { display: inline-flex; align-items: center; gap: 5px; background: #eee; color: var(--text); border: none; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; text-decoration: none; }
-        .back-btn:hover { background: #e0e0e0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--main-bg); margin: 0; padding: 0; color: var(--text-main); -webkit-text-size-adjust: 100%;
+        }
 
-        /* 設定画面のスタイル */
-        .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .btn-check { padding: 12px; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
-        .btn-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-        .btn-all { grid-column: span 3; margin-top: 5px; background: #fafafa; }
+        /* 戻るボタン（一番上の左側） */
+        .back-portal {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        .back-portal span { margin-right: 5px; }
+
+        .container { padding: 20px 15px 60px; max-width: 650px; margin: 0 auto; }
+        h1 { font-size: 2rem; font-weight: 800; margin: 10px 0 5px; text-align: center; color: var(--accent-blue); }
+        .subtitle { font-size: 0.9rem; color: var(--text-dim); text-align: center; font-weight: 600; margin-bottom: 35px; }
+
+        .section-title { font-size: 0.85rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.05em; margin: 25px 0 12px 5px; text-transform: uppercase; }
+
+        /* アプリ選択用の2列グリッド */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .menu-card { 
+            background-color: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 24px; 
+            padding: 30px 15px; 
+            text-align: center; 
+            text-decoration: none; 
+            color: var(--text-main); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02); 
+            transition: transform 0.15s, box-shadow 0.15s; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 160px;
+        }
+        .menu-card:active { transform: scale(0.97); box-shadow: 0 2px 4px rgba(0,0,0,0.01); }
         
-        select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; background: white; font-size: 1rem; font-weight: bold; color: var(--text); outline: none; }
-        .start-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2); }
-        
-        /* クイズ画面のスタイル */
-        #quiz-area { display: none; }
-        .progress-bar { font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 10px; }
-        .question-box { font-size: 1.1rem; font-weight: bold; line-height: 1.5; margin-bottom: 25px; min-height: 60px; }
-        
-        .choice-btn { display: block; width: 100%; padding: 14px 18px; margin: 10px 0; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; text-align: left; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
-        .choice-btn:disabled { cursor: default; }
-        
-        /* 正誤判定の色付け */
-        .choice-btn.correct { border-color: var(--success) !important; background: var(--success-light) !important; color: #117a65; }
-        .choice-btn.wrong { border-color: var(--error) !important; background: var(--error-light) !important; color: #78281f; }
-        
-        /* 解説エリアのスタイル */
-        .explanation-zone { display: none; background: #f8f9fa; border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-top: 20px; animation: fadeIn 0.3s ease; }
-        .feedback-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
-        .feedback-title.ok { color: var(--success); }
-        .feedback-title.ng { color: var(--error); }
-        .next-btn { width: 100%; padding: 14px; background: var(--text); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; text-align: center; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* それぞれのアプリの特徴カラー */
+        .card-new { border-top: 5px solid var(--accent-purple); }
+        .card-old { border-top: 5px solid #A4B0BE; }
+
+        .menu-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+        .menu-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; color: var(--text-main); }
+        .menu-desc { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; line-height: 1.4; }
+        .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; color: #FFF; font-weight: 800; margin-bottom: 8px; text-transform: uppercase; }
+        .badge.new { background-color: #FF4757; }
+        .badge.classic { background-color: #747D8C; }
+
+        /* スマホ用の縦並び対応 */
+        @media (max-width: 480px) {
+            .menu-grid { grid-template-columns: 1fr; gap: 15px; }
+            h1 { font-size: 1.8rem; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container" id="setup-area">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 5px;">
-        <a href="https://kaoman0079-ops.github.io/PathoForge/" class="back-btn" style="margin-bottom: 15px;">➔ PathoForge トップに戻る</a>
-        <a href="anaume.html" class="back-btn" style="margin-bottom: 15px; background: var(--primary-light); color: var(--primary);">📝 穴埋め演習へ</a>
-    </div>
+    <div class="container">
+        <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="back-portal">
+            <span>⏎</span> 🏠 Portal
+        </a>
 
-    <h1>演習設定</h1>
-    
-    <div class="section-title">出題カテゴリ</div>
-    <div class="chapter-grid">
-        <button class="btn-check" data-ch="8" onclick="toggleChapter(this)">8章</button>
-        <button class="btn-check" data-ch="9" onclick="toggleChapter(this)">9章</button>
-        <button class="btn-check" data-ch="10" onclick="toggleChapter(this)">10章</button>
-        <button class="btn-check btn-all" id="all-btn" onclick="selectAllChapters()">全範囲を選択</button>
-    </div>
+        <h1>病理学ポータル</h1>
+        <div class="subtitle">PathoForge - 学習スタイルを選択</div>
 
-    <div class="section-title">問題数</div>
-    <select id="num-q">
-        <option value="10">10問</option>
-        <option value="20">20問</option>
-        <option value="30">30問</option>
-        <option value="all">全問</option>
-    </select>
-
-    <div class="section-title">出題順序</div>
-    <select id="order-q">
-        <option value="random">ランダム</option>
-        <option value="sequence">問題番号順</option>
-    </select>
-
-    <button class="start-btn" onclick="startQuiz()">演習を開始する 🚀</button>
-</div>
-
-<div class="container" id="quiz-area">
-    <button class="back-btn" onclick="resetToPortal()">➔ 設定に戻る</button>
-
-    <div class="progress-bar" id="progress">第 1 問 / 全 10 問</div>
-    <div class="question-box" id="q-text">問題文</div>
-    <div id="choices-area"></div>
-    
-    <div class="explanation-zone" id="explanation-zone">
-        <div class="feedback-title" id="feedback-title">⭕ 正解！</div>
-        <div id="explanation-text" style="font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">解説文</div>
-        <button class="next-btn" id="next-action-btn" onclick="goToNext()">次の問題へ ➔</button>
-    </div>
-</div>
-
-<script>
-    let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
-
-    // CSVの自動判別読み込み
-    fetch('data2.csv')
-        .then(r => r.text())
-        .then(text => {
-            const lines = text.split(/\r?\n/).filter(l => l.trim());
-            allData = lines.map(line => {
-                const p = line.split(',');
-                let chNum = 0;
-                if (p[0] && (p[0].includes('8') || p[0].includes('9') || p[0].includes('10'))) chNum = parseInt(p[0].match(/\d+/)[0]);
-                else if (p[1] && (p[1].includes('8') || p[1].includes('9') || p[1].includes('10'))) chNum = parseInt(p[1].match(/\d+/)[0]);
-                
-                return { 
-                    ch: chNum, 
-                    q: p[2] || '', 
-                    c: [p[3]||'', p[4]||'', p[5]||'', p[6]||''], 
-                    ans: p[7] ? p[7].trim() : '1', 
-                    exp: p[8] || '解説は登録されていません。' 
-                };
-            }).filter(item => item.ch > 0);
-        });
-
-    function toggleChapter(btn) {
-        const ch = parseInt(btn.dataset.ch);
-        if (selectedChapters.has(ch)) {
-            selectedChapters.delete(ch);
-            btn.classList.remove('active');
-        } else {
-            selectedChapters.add(ch);
-            btn.classList.add('active');
-        }
-    }
-
-    function selectAllChapters() {
-        const buttons = document.querySelectorAll('.chapter-grid .btn-check:not(.btn-all)');
-        buttons.forEach(btn => {
-            const ch = parseInt(btn.dataset.ch);
-            selectedChapters.add(ch);
-            btn.classList.add('active');
-        });
-    }
-
-    function startQuiz() {
-        if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
-        
-        let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
-
-        const order = document.getElementById('order-q').value;
-        if (order === 'random') {
-            filtered.sort(() => Math.random() - 0.5);
-        }
-
-        const numSelect = document.getElementById('num-q').value;
-        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
-        
-        quizQueue = filtered.slice(0, count);
-        currentIdx = 0;
-
-        document.getElementById('setup-area').style.display = 'none';
-        document.getElementById('quiz-area').style.display = 'block';
-        showQ();
-    }
-
-    function showQ() {
-        document.getElementById('explanation-zone').style.display = 'none';
-        
-        const q = quizQueue[currentIdx];
-        document.getElementById('progress').innerText = `第 ${currentIdx + 1} 問 / 全 ${quizQueue.length} 問`;
-        document.getElementById('q-text').innerText = q.q;
-        
-        const area = document.getElementById('choices-area');
-        area.innerHTML = '';
-        
-        q.c.forEach((choice, i) => {
-            if(!choice) return;
-            const btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice;
+        <div class="section-title">Select Learning App</div>
+        <div class="menu-grid">
             
-            btn.onclick = () => {
-                const allButtons = area.querySelectorAll('.choice-btn');
-                allButtons.forEach(b => b.disabled = true);
-                
-                const isCorrect = (parseInt(q.ans) === i + 1);
-                
-                if (isCorrect) {
-                    btn.classList.add('correct');
-                    document.getElementById('feedback-title').innerText = "⭕ 正解！";
-                    document.getElementById('feedback-title').className = "feedback-title ok";
-                } else {
-                    btn.classList.add('wrong');
-                    document.getElementById('feedback-title').innerText = "❌ 不正解...";
-                    document.getElementById('feedback-title').className = "feedback-title ng";
-                    
-                    const ansIndex = parseInt(q.ans) - 1;
-                    if(allButtons[ansIndex]) {
-                        allButtons[ansIndex].classList.add('correct');
-                    }
-                }
-                
-                document.getElementById('explanation-text').innerText = q.exp;
-                
-                const nextBtn = document.getElementById('next-action-btn');
-                if (currentIdx === quizQueue.length - 1) {
-                    nextBtn.innerText = "演習を終了して設定に戻る ➔";
-                } else {
-                    nextBtn.innerText = "次の問題へ ➔";
-                }
-                
-                document.getElementById('explanation-zone').style.display = 'block';
-            };
-            area.appendChild(btn);
-        });
-    }
+            <a href="quiz.html" class="menu-card card-new">
+                <span class="badge new">NEW</span>
+                <span class="menu-icon">🔬</span>
+                <span class="menu-title">統合演習システム</span>
+                <span class="menu-desc">穴埋め暗記 ＆ 4択演習<br>（data2.csv 連動版）</span>
+            </a>
 
-    function goToNext() {
-        currentIdx++;
-        if (currentIdx < quizQueue.length) {
-            showQ();
-        } else {
-            resetToPortal();
-        }
-    }
+            <a href="card.html" class="menu-card card-old">
+                <span class="badge classic">Classic</span>
+                <span class="menu-icon">🃏</span>
+                <span class="menu-title">病理学カード</span>
+                <span class="menu-desc">重要キーワードの暗記カード<br>（従来のシステム）</span>
+            </a>
 
-    function resetToPortal() {
-        document.getElementById('quiz-area').style.display = 'none';
-        document.getElementById('setup-area').style.display = 'block';
-        currentIdx = 0;
-    }
-</script>
+        </div>
+    </div>
+
 </body>
 </html>
