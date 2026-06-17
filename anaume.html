@@ -36,7 +36,7 @@
         select { width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; font-size: 1rem; font-weight: bold; color: var(--text-main); outline: none; }
         .start-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2); }
 
-        /* クイズ画面（MedBlankデザインを完全インスパイア） */
+        /* クイズ画面（MedBlankデザインを完全再現） */
         #quiz-area { display: none; }
         .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 260px; display: flex; flex-direction: column; justify-content: space-between; }
         
@@ -139,46 +139,71 @@
 <script>
     let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
 
-    // CSVのカンマやダブルクォーテーションを綺麗に処理するパース関数
-    function parseCSVLine(line) {
-        const result = [];
+    // 完璧なCSVパーサー（クォート内の改行・カンマ・エスケープ完全対応）
+    function parseCSV(text) {
+        const rows = [];
+        let row = [];
         let current = '';
         let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const nextChar = text[i + 1];
+
             if (char === '"') {
-                inQuotes = !inQuotes;
+                if (inQuotes && nextChar === '"') {
+                    current += '"';
+                    i++; 
+                } else {
+                    inQuotes = !inQuotes;
+                }
             } else if (char === ',' && !inQuotes) {
-                result.push(current.trim());
+                row.push(current.trim());
+                current = '';
+            } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                if (char === '\r' && nextChar === '\n') i++;
+                row.push(current.trim());
+                if (row.some(cell => cell !== '')) rows.push(row);
+                row = [];
                 current = '';
             } else {
                 current += char;
             }
         }
-        result.push(current.trim());
-        return result;
+        if (current || row.length > 0) {
+            row.push(current.trim());
+            if (row.some(cell => cell !== '')) rows.push(row);
+        }
+        return rows;
     }
 
-    // CSV読み込み（列位置の修正とクォート対応）
+    // CSV読み込みと超強力なデータフィルタリング
     fetch('data2.csv')
         .then(r => r.text())
         .then(text => {
-            const lines = text.split(/\r?\n/).filter(l => l.trim());
-            // ヘッダー行があれば飛ばす
-            if (lines[0].includes('chapter')) lines.shift();
-
-            allData = lines.map(line => {
-                const p = parseCSVLine(line);
+            const parsedRows = parseCSV(text);
+            
+            allData = parsedRows.map(p => {
                 if (p.length < 3) return null;
-
-                let chNum = parseInt(p[0]) || 0;
                 
+                let chNum = parseInt(p[0]) || 0;
+                let questionText = p[1] || '';
+                let answerText = p[2] || '';
+
+                // ★超重要ガード：問題文に「〔 ? 〕」系の穴埋め記号が含まれていない行（見出しなど）は完全に除外
+                if (!/〔\s*\?\s*〕/.test(questionText)) {
+                    return null;
+                }
+
                 return { 
                     ch: chNum, 
-                    q: p[1] || '',  /* 2列目：問題文（〔 ? 〕入り） */
-                    ans: p[2] || '' /* 3列目：答え（パイプ区切り） */
+                    q: questionText, 
+                    ans: answerText
                 };
-            }).filter(item => item && item.ch > 0);
+            }).filter(item => item !== null && item.ch > 0);
+        })
+        .catch(err => {
+            console.error("CSV読み込みエラー:", err);
         });
 
     function toggleChapter(btn) {
@@ -205,7 +230,7 @@
         if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
         
         let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の問題が見取れません。");
+        if (filtered.length === 0) return alert("選択した章の有効な穴埋め問題が見つかりません。");
 
         filtered.sort(() => Math.random() - 0.5);
 
@@ -220,12 +245,11 @@
         showQ();
     }
 
-    // ★ 〔 ? 〕を見つけて答えの単語を埋め込んだマスクに置換するコアロジック
+    // 〔 ? 〕を見つけて答えの単語を埋め込んだマスクに置換する
     function injectBlanks(qText, aText) {
         const answers = aText.split('|');
         let ansIdx = 0;
         
-        // 表記揺れ（〔?〕や〔 ? 〕など）に対応する正規表現
         return qText.replace(/〔\s*\?\s*〕/g, () => {
             const currentAnswer = answers[ansIdx++] || '？';
             return `<span class="blank-mask" onclick="toggleMask(this)">${currentAnswer}</span>`;
@@ -238,7 +262,6 @@
         document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
         document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
         
-        // 問題文テキストに答えをマスク化して注入
         document.getElementById('q-text').innerHTML = injectBlanks(q.q, q.ans);
         
         const nextBtn = document.getElementById('next-action-btn');
@@ -249,12 +272,10 @@
         }
     }
 
-    // マスクを個別にクリックしたときの開閉
     function toggleMask(el) {
         el.classList.toggle('is-open');
     }
 
-    // 「答えを表示」で一括オープン
     function revealAll() {
         const masks = document.querySelectorAll('.blank-mask');
         masks.forEach(m => m.classList.add('is-open'));
