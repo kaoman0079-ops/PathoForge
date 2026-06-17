@@ -19,15 +19,22 @@
             --border: #e1e8ed;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: var(--card); padding: 30px 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .container { max-width: 500px; margin: 0 auto; background: var(--card); padding: 30px 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; }
+        
+        /* ヘッダー・タイトル */
         h1 { font-size: 1.6rem; font-weight: 800; text-align: center; margin-top: 0; margin-bottom: 25px; }
         .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px; }
         
+        /* ポータルに戻るボタン（クイズ画面用） */
+        .back-to-portal { display: inline-flex; align-items: center; gap: 5px; background: #eee; color: var(--text); border: none; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; }
+        .back-to-portal:hover { background: #e0e0e0; }
+
         /* 設定画面のスタイル */
         .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-check { padding: 12px; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
         .btn-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
         .btn-all { grid-column: span 3; margin-top: 5px; background: #fafafa; }
+        
         select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; background: white; font-size: 1rem; font-weight: bold; color: var(--text); outline: none; }
         .start-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2); }
         
@@ -39,16 +46,16 @@
         .choice-btn { display: block; width: 100%; padding: 14px 18px; margin: 10px 0; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; text-align: left; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
         .choice-btn:disabled { cursor: default; }
         
-        /* 正誤判定の判定色 */
+        /* 正誤判定の色付け */
         .choice-btn.correct { border-color: var(--success) !important; background: var(--success-light) !important; color: #117a65; }
         .choice-btn.wrong { border-color: var(--error) !important; background: var(--error-light) !important; color: #78281f; }
         
-        /* 解説エリア */
+        /* 解説エリアのスタイル */
         .explanation-zone { display: none; background: #f8f9fa; border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-top: 20px; animation: fadeIn 0.3s ease; }
         .feedback-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
         .feedback-title.ok { color: var(--success); }
         .feedback-title.ng { color: var(--error); }
-        .next-btn { width: 100%; padding: 14px; background: var(--text); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; }
+        .next-btn { width: 100%; padding: 14px; background: var(--text); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; text-align: center; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -84,9 +91,65 @@
 </div>
 
 <div class="container" id="quiz-area">
+    <button class="back-to-portal" onclick="resetToPortal()">➔ 設定に戻る</button>
+
     <div class="progress-bar" id="progress">第 1 問 / 全 10 問</div>
     <div class="question-box" id="q-text">問題文</div>
     <div id="choices-area"></div>
     
     <div class="explanation-zone" id="explanation-zone">
-        <div class="feedback-title" id="feedback-title">⭕
+        <div class="feedback-title" id="feedback-title">⭕ 正解！</div>
+        <div id="explanation-text" style="font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">解説文</div>
+        <button class="next-btn" id="next-action-btn" onclick="goToNext()">次の問題へ ➔</button>
+    </div>
+</div>
+
+<script>
+    let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
+
+    // CSVの自動判別読み込み（1列目か2列目の章番号、3列目問題、4-7選択肢、8正解、9解説）
+    fetch('data2.csv')
+        .then(r => r.text())
+        .then(text => {
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            allData = lines.map(line => {
+                const p = line.split(',');
+                let chNum = 0;
+                if (p[0] && (p[0].includes('8') || p[0].includes('9') || p[0].includes('10'))) chNum = parseInt(p[0].match(/\d+/)[0]);
+                else if (p[1] && (p[1].includes('8') || p[1].includes('9') || p[1].includes('10'))) chNum = parseInt(p[1].match(/\d+/)[0]);
+                
+                return { 
+                    ch: chNum, 
+                    q: p[2] || '', 
+                    c: [p[3]||'', p[4]||'', p[5]||'', p[6]||''], 
+                    ans: p[7] ? p[7].trim() : '1', 
+                    exp: p[8] || '解説は登録されていません。' 
+                };
+            }).filter(item => item.ch > 0);
+        });
+
+    function toggleChapter(btn) {
+        const ch = parseInt(btn.dataset.ch);
+        if (selectedChapters.has(ch)) {
+            selectedChapters.delete(ch);
+            btn.classList.remove('active');
+        } else {
+            selectedChapters.add(ch);
+            btn.classList.add('active');
+        }
+    }
+
+    function selectAllChapters() {
+        const buttons = document.querySelectorAll('.chapter-grid .btn-check:not(.btn-all)');
+        buttons.forEach(btn => {
+            const ch = parseInt(btn.dataset.ch);
+            selectedChapters.add(ch);
+            btn.classList.add('active');
+        });
+    }
+
+    function startQuiz() {
+        if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
+        
+        let filtered = allData.filter(d => selectedChapters.has(d.ch));
+        if (filtered.length === 0) return alert("
