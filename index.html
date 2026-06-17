@@ -29,6 +29,35 @@
         .back-btn { display: inline-flex; align-items: center; gap: 5px; background: #eee; color: var(--text); border: none; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; text-decoration: none; }
         .back-btn:hover { background: #e0e0e0; }
 
+        /* 穴埋め演習ナビゲーションボタンのスタイル */
+        .portal-menu-btn {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: 18px;
+            padding: 15px 18px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .portal-menu-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.1);
+        }
+        .portal-menu-btn .btn-icon { font-size: 1.6rem; margin-right: 12px; }
+        .portal-menu-btn .btn-info { display: flex; flex-direction: column; flex-grow: 1; }
+        .portal-menu-btn .btn-title { font-size: 1rem; font-weight: 800; margin-bottom: 2px; }
+        .portal-menu-btn .btn-desc { font-size: 0.75rem; color: var(--text-dim); font-weight: 500; }
+        .portal-menu-btn .btn-arrow { font-size: 1rem; color: #bdc3c7; transition: transform 0.2s; }
+        .portal-menu-btn:hover .btn-arrow { color: var(--primary); transform: translateX(3px); }
+        .divider { border: 0; border-top: 1px solid var(--border); margin: 25px 0; }
+
         /* 設定画面のスタイル */
         .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-check { padding: 12px; border: 2px solid var(--border); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
@@ -65,7 +94,18 @@
 <div class="container" id="setup-area">
     <a href="https://kaoman0079-ops.github.io/PathoForge/" class="back-btn">➔ PathoForge トップに戻る</a>
 
-    <h1>演習設定</h1>
+    <a href="anaume.html" class="portal-menu-btn">
+        <span class="btn-icon">📝</span>
+        <div class="btn-info">
+            <span class="btn-title">穴埋め演習を開始する</span>
+            <span class="btn-desc">重要ワードを空欄補充形式で徹底攻略</span>
+        </div>
+        <span class="btn-arrow">➔</span>
+    </a>
+
+    <hr class="divider">
+
+    <h1>4択演習設定</h1>
     
     <div class="section-title">出題カテゴリ</div>
     <div class="chapter-grid">
