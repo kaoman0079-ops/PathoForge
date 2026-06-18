@@ -20,15 +20,49 @@
         .all-btn { width: 100%; padding: 12px; border: 1px solid #ccd1d9; background: #f8f9fa; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; color: #555; }
         .start-btn { width: 100%; padding: 16px; background-color: #e74c3c; color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: all 0.2s; }
         .start-btn:hover { background-color: #c0392b; }
+        
+        /* クイズ画面 */
         .quiz-view { display: none; }
         .quiz-card { background: #fff; border: 1px solid #ccd1d9; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 20px; }
         .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #95a5a6; font-weight: bold; margin-bottom: 25px; border-bottom: 1px solid #f1f2f6; padding-bottom: 15px; }
-        .card-body { font-size: 1.1rem; font-weight: bold; line-height: 1.8; color: #2c3e50; margin-bottom: 30px; word-break: break-word; }
-        .answer-zone { width: 100%; padding: 20px; background: #f8f9fa; border: 2px dashed #ccd1d9; border-radius: 14px; text-align: center; box-sizing: border-box; cursor: pointer; transition: all 0.3s; }
-        .answer-zone.hidden { color: #7f8c8d; font-weight: bold; background: #f1f2f6; font-size: 1.1rem; }
-        .answer-zone.hidden:hover { background: #e4e7eb; border-color: #95a5a6; }
-        .answer-zone.revealed { background: #fff5f5; border: 2px solid #e74c3c; color: #e74c3c; font-size: 1.1rem; font-weight: bold; cursor: default; line-height: 1.6; }
-        .next-btn { width: 100%; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; display: none; box-sizing: border-box; margin-top: 15px; }
+        
+        /* ★MedBlank風：問題文章の表示（タップしやすいよう行間を広く） */
+        .card-body { 
+            font-size: 1.25rem; 
+            font-weight: bold; 
+            line-height: 2.2; 
+            color: #2c3e50; 
+            margin-bottom: 10px; 
+            word-break: break-word; 
+        }
+        
+        /* ★MedBlank風：隠し黒塗りボックス★ */
+        .blank {
+            display: inline-block;
+            background-color: #2c3e50; /* 隠れている時は文字色と同じにして隠蔽 */
+            color: #2c3e50;
+            border-radius: 6px;
+            padding: 0 10px;
+            margin: 0 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;         /* 長押しで文字選択されて見えちゃうのを防止 */
+            vertical-align: middle;
+            line-height: 1.4;
+            border-bottom: 2px solid #1a252f;
+        }
+        /* ★タップして開いた状態★ */
+        .blank.open {
+            background-color: #ffe9e9; /* 薄い赤ピンク */
+            color: #e74c3c;           /* 文字は赤 */
+            border-bottom: 2px solid #e74c3c;
+            cursor: default;
+        }
+
+        /* 下部ボタンエリア */
+        .action-area { display: flex; gap: 12px; margin-top: 20px; }
+        .action-area .all-btn { flex: 1; margin: 0; padding: 14px; font-size: 0.95rem; }
+        .next-btn { flex: 1; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; box-sizing: border-box; }
         .next-btn:hover { background-color: #2980b9; }
         .result-view { display: none; }
     </style>
@@ -84,9 +118,12 @@
                 <span id="card-meta">病理学 ➔ 8章</span>
             </div>
             <div class="card-body" id="question-text">問題文読み込み中...</div>
-            <div id="answer-zone" class="answer-zone hidden" onclick="revealAnswer()">タップして正解を表示 🔍</div>
         </div>
-        <button class="next-btn" id="next-btn" onclick="nextCard()">次のカード ➔</button>
+        
+        <div class="action-area">
+            <button class="all-btn" onclick="revealAllBlanks()">答えを一斉表示 👁️</button>
+            <button class="next-btn" id="next-btn" onclick="nextCard()">次のカード ➔</button>
+        </div>
     </div>
 
     <div id="result-view" class="container result-view">
@@ -100,7 +137,7 @@
         let quizQueue = [];
         let currentIndex = 0;
 
-        // GitHub Pages のパスを自動判定
+        // GitHub Pages のパスを自動判定 (元のAIさんの素晴らしいコードを維持)
         const baseUrl = window.location.pathname.includes('/PathoForge/') 
             ? '/PathoForge/' 
             : './';
@@ -186,6 +223,7 @@
             }
         }
 
+        // 優秀なCSVパースロジックを完全維持
         function parseCSVLine(line) {
             const result = [];
             let current = '';
@@ -241,6 +279,9 @@
             
             if (orderStyle === 'random') {
                 filtered.sort(() => Math.random() - 0.5);
+            } else {
+                // 順番通り（No順）にソートを安定化
+                filtered.sort((a, b) => (parseInt(a.chapter) - parseInt(b.chapter)) || (a.no - b.no));
             }
 
             const countVal = document.getElementById('quiz-count').value;
@@ -256,32 +297,41 @@
             showCard();
         }
 
+        // ★新設：MedBlank風に文章を穴埋めパーツに変換する司令塔
+        function formatMedBlankStyle(question, answers) {
+            let html = question;
+
+            // ① 問題文自体にすでに カッコ ( ) や （ ） が存在する場合
+            const hasParentheses = /[（\(][^）\)]+[）\)]/.test(html);
+            if (hasParentheses) {
+                return html.replace(/[（\(]([^）\)]+)[）\)]/g, '<span class="blank" onclick="this.classList.add(\'open\')">$1</span>');
+            }
+
+            // ② 問題文の中に「答えの文字列」がそのまま含まれている場合
+            if (answers && html.includes(answers)) {
+                const escapedAnswers = answers.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // 安全対策記号エスケープ
+                return html.replace(new RegExp(escapedAnswers, 'g'), `<span class="blank" onclick="this.classList.add('open')">${answers}</span>`);
+            }
+
+            // ③ 問題文が独立した質問形式の場合、文末に答えをドッキング
+            return html + ` <span style="color: #95a5a6; font-size: 1rem; font-weight: normal; margin-left: 6px;">➔</span> <span class="blank" onclick="this.classList.add('open')">${answers}</span>`;
+        }
+
         function showCard() {
             if (currentIndex >= quizQueue.length) return;
             
             const item = quizQueue[currentIndex];
             
             document.getElementById('card-count').innerText = `カード ${currentIndex + 1} / ${quizQueue.length}`;
-            document.getElementById('card-meta').innerText = `病理学 ➔ ${item.chapter}章`;
-            document.getElementById('question-text').innerText = item.question;
+            document.getElementById('card-meta').innerText = `病理学 ➔ ${item.chapter}章 No.${item.no}`;
             
-            const answerZone = document.getElementById('answer-zone');
-            answerZone.classList.remove('revealed');
-            answerZone.classList.add('hidden');
-            answerZone.innerText = 'タップして正解を表示 🔍';
-            
-            document.getElementById('next-btn').style.display = 'none';
+            // MedBlankスタイルに変換して流し込む
+            document.getElementById('question-text').innerHTML = formatMedBlankStyle(item.question, item.answers);
         }
 
-        function revealAnswer() {
-            const item = quizQueue[currentIndex];
-            const answerZone = document.getElementById('answer-zone');
-            
-            answerZone.classList.remove('hidden');
-            answerZone.classList.add('revealed');
-            answerZone.innerText = item.answers;
-            
-            document.getElementById('next-btn').style.display = 'block';
+        // ★新設：一斉表示機能
+        function revealAllBlanks() {
+            document.querySelectorAll('.blank').forEach(el => el.classList.add('open'));
         }
 
         function nextCard() {
