@@ -55,7 +55,7 @@
         }
 
         /* 4択ボタンエリア */
-        .choices-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+        .choices-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
         .choice-btn { 
             width: 100%; padding: 16px 20px; background: white; 
             border: 2px solid var(--border-color); border-radius: 14px; 
@@ -70,6 +70,19 @@
         .choice-btn.incorrect { background-color: var(--error) !important; border-color: var(--error) !important; color: white !important; }
         .choice-btn.disabled { pointer-events: none; opacity: 0.6; }
         .choice-btn.correct.disabled, .choice-btn.incorrect.disabled { opacity: 1; }
+
+        /* 解説ボックス */
+        #commentary-box {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #F8F9FA;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #34495E;
+            display: none;
+        }
 
         /* 下部ボタンエリア */
         .action-area { display: flex; justify-content: flex-end; }
@@ -133,6 +146,8 @@
                 <div class="question-body" id="q-text"></div>
 
                 <div class="choices-container" id="choices-box"></div>
+
+                <div id="commentary-box"></div>
             </div>
 
             <div class="action-area">
@@ -146,7 +161,7 @@
 <script>
     let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
 
-    // CSVパーサー
+    // CSVパーサー（引用符対応型）
     function parseCSV(text) {
         const rows = [];
         let row = [];
@@ -154,7 +169,9 @@
         let inQuotes = false;
 
         for (let i = 0; i < text.length; i++) {
-            const char = text[i];
+            const char = text[text.charCodeAt(i) === 0xFEFF ? i+1 : i]; // BOM飛ばし対応
+            if (text.charCodeAt(i) === 0xFEFF) { i++; continue; }
+            
             const nextChar = text[i + 1];
 
             if (char === '"') {
@@ -184,40 +201,41 @@
         return rows;
     }
 
-    // ★ 読み込み先を data2.csv に修正しました
+    // CSV読み込み処理
     fetch('data2.csv')
         .then(r => {
-            if (!r.ok) {
-                throw new Error(`ファイルが見つかりません (Status: ${r.status})。data2.csv が同じフォルダにあるか確認してください。`);
-            }
+            if (!r.ok) throw new Error(`ファイルが見つかりません (Status: ${r.status})`);
             return r.text();
         })
         .then(text => {
             const parsedRows = parseCSV(text);
             
-            allData = parsedRows.map(p => {
-                if (p.length < 3) return null;
+            // ヘッダー行（1行目）を飛ばしてマッピング
+            allData = parsedRows.slice(1).map(p => {
+                if (p.length < 8) return null; // 最低限、正解列（8列目）までデータがあること
                 
-                let chNum = parseInt(p[0]) || 0;
-                let questionText = p[1] || '';
-                let answerText = p[2] || '';
-
-                if (questionText.trim() === '' || answerText.trim() === '') return null;
+                // 2列目の「第8章：腫瘍」などから数字だけを抽出する
+                let match = p[1].match(/\d+/);
+                let chNum = match ? parseInt(match[0]) : 0;
 
                 return { 
-                    ch: chNum, 
-                    q: questionText, 
-                    ans: answerText
+                    id: p[0],                   // 問題番号
+                    ch: chNum,                  // 章番号（数値）
+                    chText: p[1],               // 章の表記テキスト
+                    q: p[2],                    // 問題文
+                    choices: [p[3], p[4], p[5], p[6]], // 選択肢1〜4
+                    ans: String(p[7]),          // 正解（"2" や "3・4" など）
+                    comment: p[8] || ''         // 解説まとめ
                 };
             }).filter(item => item !== null && item.ch > 0);
 
             if (allData.length === 0) {
-                alert("警告: CSVデータは読み込めましたが、有効な問題が0件です。データ形式を確認してください。");
+                alert("CSVデータは読み込めましたが、有効な問題データが抽出できませんでした。");
             }
         })
         .catch(err => {
             console.error("CSV読み込みエラー:", err);
-            alert("【CSV読み込みエラー】\n" + err.message);
+            alert("【CSV読み込みエラー】\ndata2.csvの形式、または配置場所を確認してください。\n" + err.message);
         });
 
     function toggleChapter(btn) {
@@ -242,11 +260,12 @@
 
     function startQuiz() {
         if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
-        if (allData.length === 0) return alert("データが読み込まれていません。CSVファイルを確認してください。");
+        if (allData.length === 0) return alert("データが読み込まれていません。");
         
         let filtered = allData.filter(d => selectedChapters.has(d.ch));
         if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
 
+        // ランダムシャッフル
         filtered.sort(() => Math.random() - 0.5);
 
         const numSelect = document.getElementById('num-q').value;
@@ -260,64 +279,60 @@
         showQ();
     }
 
-    // 誤答を他のデータからランダム抽出して4択を作るロジック
-    function generateChoices(correctAns, currentCh) {
-        let pool = allData.filter(d => d.ch === currentCh).map(d => d.ans.split('|')[0].trim());
-        let allAnswers = [...new Set(pool)];
-        
-        if (allAnswers.length < 4) {
-            pool = allData.map(d => d.ans.split('|')[0].trim());
-            allAnswers = [...new Set(pool)];
-        }
-        
-        allAnswers = allAnswers.filter(a => a !== correctAns && a !== '');
-        allAnswers.sort(() => Math.random() - 0.5);
-        let choices = allAnswers.slice(0, 3);
-        
-        choices.push(correctAns);
-        choices.sort(() => Math.random() - 0.5);
-        
-        return choices;
-    }
-
     function showQ() {
         const q = quizQueue[currentIdx];
         
         document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
-        document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
+        document.getElementById('card-category').innerText = `病理学 ＞ ${q.chText}`;
+        document.getElementById('q-text').innerText = q.q;
         
-        let displayQuestion = q.q.replace(/〔\s*\?\s*〕/g, '（  ）');
-        document.getElementById('q-text').innerText = displayQuestion;
-        
-        let correctAns = q.ans.split('|')[0].trim();
-        let choices = generateChoices(correctAns, q.ch);
-        
+        // 解説ボックスを一旦隠す
+        const commentBox = document.getElementById('commentary-box');
+        commentBox.style.display = 'none';
+        commentBox.innerHTML = '';
+
         let choicesBox = document.getElementById('choices-box');
         choicesBox.innerHTML = '';
         
-        choices.forEach(choice => {
+        // CSVに用意されている4つの選択肢をそのままボタンとして配置
+        q.choices.forEach((choice, index) => {
+            if (!choice) return; // 空の選択肢はスキップ
             let btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.innerText = choice;
-            btn.onclick = () => checkAnswer(btn, choice, correctAns);
+            // 選択肢の番号（1〜4）を渡して正誤判定する
+            btn.onclick = () => checkAnswer(btn, index + 1, q.ans, q.comment);
             choicesBox.appendChild(btn);
         });
 
         document.getElementById('next-action-btn').style.visibility = 'hidden';
     }
 
-    function checkAnswer(selectedBtn, selectedAns, correctAns) {
+    function checkAnswer(selectedBtn, selectedNum, correctAnsStr, commentText) {
         const buttons = document.querySelectorAll('.choice-btn');
         
-        buttons.forEach(b => {
+        // クリックした選択肢番号が、正解文字列（例: "2" や "3・4"）に含まれているか判定
+        let isCorrect = correctAnsStr.includes(String(selectedNum));
+
+        buttons.forEach((b, idx) => {
             b.classList.add('disabled');
-            if (b.innerText === correctAns) {
+            let btnNum = idx + 1;
+            // 正解のボタンすべてに緑色の「correct」クラスを付与
+            if (correctAnsStr.includes(String(btnNum))) {
                 b.classList.add('correct');
             }
         });
 
-        if (selectedAns !== correctAns) {
+        // 間違ったボタンを押した場合は赤色にする
+        if (!isCorrect) {
             selectedBtn.classList.add('incorrect');
+        }
+
+        // 解説があれば表示する
+        if (commentText) {
+            const commentBox = document.getElementById('commentary-box');
+            commentBox.innerHTML = `<strong>💡 解説まとめ:</strong><br>${commentText}`;
+            commentBox.style.display = 'block';
         }
 
         const nextBtn = document.getElementById('next-action-btn');
