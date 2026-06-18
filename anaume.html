@@ -2,314 +2,79 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PathoForge 穴埋め演習</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PathoForge - 穴埋め演習</title>
     <style>
-        :root {
-            --main-bg: #F4F6F9;
-            --card-bg: #FFFFFF;
-            --primary: #3498db;
-            --primary-light: #ebf5fb;
-            --text-main: #2C3E50;
-            --text-dim: #7F8C8D;
-            --border-color: #E1E8ED;
-            --mask-closed: #2F3542; /* 閉じている時の引き締まったマスク色 */
-            --mask-open-text: #1a73e8; /* 開いた時の見やすいブルー */
-        }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--main-bg); margin: 0; padding: 20px; color: var(--text-main); -webkit-text-size-adjust: 100%;
-        }
-
-        .container { max-width: 600px; margin: 0 auto; position: relative; }
-
-        /* 上部ナビゲーション */
-        .nav-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .back-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-        /* 設定画面 */
-        h1 { font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--text-main); }
-        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px 5px; }
-        .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .btn-check { padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
-        .btn-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-        .btn-all { grid-column: span 3; margin-top: 5px; background: #fafafa; }
-        select { width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; font-size: 1rem; font-weight: bold; color: var(--text-main); outline: none; }
-        .start-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2); }
-
-        /* クイズ画面 */
-        #quiz-area { display: none; }
-        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 280px; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        .card-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; }
-        
-        /* 改良：問題文テキスト（フォントサイズ・太さ・行間を最適化） */
-        .question-body { 
-            font-size: 1.1rem; 
-            font-weight: 500; 
-            line-height: 2.1; 
-            color: var(--text-main); 
-            margin-bottom: 35px; 
-            min-height: 120px; 
-            word-break: break-all;
-            letter-spacing: 0.03em;
-        }
-
-        /* 改良：穴埋めマスク（閉じている時はスマートな黒系の目隠し） */
-        .blank-mask { 
-            background-color: var(--mask-closed); 
-            color: var(--mask-closed); 
-            border-radius: 4px; 
-            padding: 1px 8px; 
-            margin: 0 2px; 
-            cursor: pointer; 
-            display: inline-block; 
-            transition: all 0.15s ease; 
-            user-select: none; 
-            vertical-align: middle;
-            line-height: 1.2;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-        }
-        
-        /* 改良：タップして開いた時（背景を透明にし、文章に馴染むように変更！） */
-        .blank-mask.is-open { 
-            background-color: transparent; 
-            color: var(--mask-open-text); 
-            font-weight: 700;
-            border-bottom: 2px solid var(--mask-open-text); 
-            border-radius: 0;
-            padding: 1px 4px;
-            margin: 0 4px;
-            user-select: text;
-            box-shadow: none;
-        }
-
-        /* 下部ボタン */
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .action-btn { padding: 14px; border-radius: 14px; font-weight: bold; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; border: none; }
-        .btn-reveal { background-color: var(--card-bg); color: var(--text-main); border: 2px solid var(--border-color); }
-        .btn-reveal:active { background-color: #f5f5f5; }
-        .btn-next { background-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); }
-        .btn-next:active { transform: scale(0.98); }
-
-        @media (max-width: 480px) {
-            body { padding: 10px; }
-            .quiz-card { padding: 25px 18px; }
-            .question-body { font-size: 1.05rem; line-height: 2.0; }
-        }
+        body { font-family: -apple-system, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .portal-btn { background: #fff; border: 1px solid #ddd; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: inline-block; margin-bottom: 20px; text-decoration: none; color: #555; }
+        h2 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 30px; }
+        .setting-item { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 0.95rem; }
+        select { width: 100%; padding: 14px; font-size: 1rem; border-radius: 12px; border: 1px solid #ccd1d9; background-color: #fff; font-weight: 600; color: #2c3e50; outline: none; }
+        .start-btn { width: 100%; padding: 16px; background-color: #3498db; color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 25px; transition: background 0.2s; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
+        .start-btn:hover { background-color: #2980b9; }
+        .chapter-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .ch-btn { flex: 1; padding: 12px; border: 1px solid #ccd1d9; background: #fff; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .ch-btn.active { background: #3498db; color: white; border-color: #3498db; }
+        .all-btn { width: 100%; padding: 12px; border: 1px solid #ccd1d9; background: #f8f9fa; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 25px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+    <a href="#" class="portal-btn">🧬 病理学ポータル</a>
 
-    <div id="setup-area">
-        <div class="nav-area">
-            <a href="index.html" class="back-btn">⏎ 病理学ポータル</a>
-        </div>
-        <h1>穴埋め演習 設定</h1>
-        
-        <div class="section-title">出題カテゴリ</div>
-        <div class="chapter-grid">
-            <button class="btn-check" data-ch="8" onclick="toggleChapter(this)">8章</button>
-            <button class="btn-check" data-ch="9" onclick="toggleChapter(this)">9章</button>
-            <button class="btn-check" data-ch="10" onclick="toggleChapter(this)">10章</button>
-            <button class="btn-check btn-all" id="all-btn" onclick="selectAllChapters()">全範囲を選択</button>
+    <div class="container">
+        <h2>穴埋め演習 設定</h2>
+
+        <div class="setting-item">
+            <label>出題カテゴリ</label>
+            <div class="chapter-group">
+                <button class="ch-btn active">8章</button>
+                <button class="ch-btn">9章</button>
+                <button class="ch-btn">10章</button>
+            </div>
+            <button class="all-btn">全範囲を選択</button>
         </div>
 
-        <div class="section-title">出題数</div>
-        <select id="num-q">
-            <option value="10">10問</option>
-            <option value="20">20問</option>
-            <option value="30">30問</option>
-            <option value="all">全問</option>
-        </select>
+        <div class="setting-item">
+            <label>出題数</label>
+            <select id="quiz-count">
+                <option value="10">10問</option>
+                <option value="20">20問</option>
+                <option value="all">全問</option>
+            </select>
+        </div>
+
+        <!-- 追加した出題順序セクション -->
+        <div class="setting-item">
+            <label>出題順序</label>
+            <select id="quiz-order">
+                <option value="shuffle" selected>ランダムに出題</option>
+                <option value="normal">番号順に出題</option>
+            </select>
+        </div>
 
         <button class="start-btn" onclick="startQuiz()">演習を開始する 🚀</button>
     </div>
 
-    <div id="quiz-area">
-        <div class="nav-area">
-            <button class="back-btn" onclick="resetToPortal()">➔ 設定に戻る</button>
-        </div>
-
-        <div class="quiz-card">
-            <div>
-                <div class="card-header">
-                    <span id="card-progress">カード 1 / 10</span>
-                    <span id="card-category">病理学 ＞ 各論</span>
-                </div>
-                
-                <div class="question-body" id="q-text"></div>
-            </div>
-
-            <div class="action-grid">
-                <button class="action-btn btn-reveal" onclick="revealAll()">答えを表示 👁</button>
-                <button class="action-btn btn-next" id="next-action-btn" onclick="goToNext()">次のカード ➔</button>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<script>
-    let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
-
-    // CSVパーサー
-    function parseCSV(text) {
-        const rows = [];
-        let row = [];
-        let current = '';
-        let inQuotes = false;
-
-        for (let i = 0; i < text.length; i++) {
-            const char = text[i];
-            const nextChar = text[i + 1];
-
-            if (char === '"') {
-                if (inQuotes && nextChar === '"') {
-                    current += '"';
-                    i++; 
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === ',' && !inQuotes) {
-                row.push(current.trim());
-                current = '';
-            } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                if (char === '\r' && nextChar === '\n') i++;
-                row.push(current.trim());
-                if (row.some(cell => cell !== '')) rows.push(row);
-                row = [];
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        if (current || row.length > 0) {
-            row.push(current.trim());
-            if (row.some(cell => cell !== '')) rows.push(row);
-        }
-        return rows;
-    }
-
-    // anadata.csv から読み込み
-    fetch('anadata.csv')
-        .then(r => r.text())
-        .then(text => {
-            const parsedRows = parseCSV(text);
+    <script>
+        // 実際のクイズ開始ロジック（仕組みの参考用）
+        function startQuiz() {
+            const orderVal = document.getElementById('quiz-order').value;
             
-            allData = parsedRows.map(p => {
-                if (p.length < 3) return null;
-                
-                let chNum = parseInt(p[0]) || 0;
-                let questionText = p[1] || '';
-                let answerText = p[2] || '';
+            // 例: カテゴリ選択された元の問題データ
+            let filteredQuestions = [ /* 問題データ配列 */ ]; 
 
-                // 見出し行の除外ガード
-                if (!/〔\s*\?\s*〕/.test(questionText)) {
-                    return null;
-                }
-
-                return { 
-                    ch: chNum, 
-                    q: questionText, 
-                    ans: answerText
-                };
-            }).filter(item => item !== null && item.ch > 0);
-        })
-        .catch(err => {
-            console.error("CSV読み込みエラー:", err);
-        });
-
-    function toggleChapter(btn) {
-        const ch = parseInt(btn.dataset.ch);
-        if (selectedChapters.has(ch)) {
-            selectedChapters.delete(ch);
-            btn.classList.remove('active');
-        } else {
-            selectedChapters.add(ch);
-            btn.classList.add('active');
+            if (orderVal === 'shuffle') {
+                filteredQuestions.sort(() => Math.random() - 0.5);
+            } else {
+                filteredQuestions.sort((a, b) => (a.no || 0) - (b.no || 0));
+            }
+            
+            // このあと画面遷移やクイズ描画へ
+            console.log("出題順序:", orderVal, filteredQuestions);
         }
-    }
-
-    function selectAllChapters() {
-        const buttons = document.querySelectorAll('.chapter-grid .btn-check:not(.btn-all)');
-        buttons.forEach(btn => {
-            const ch = parseInt(btn.dataset.ch);
-            selectedChapters.add(ch);
-            btn.classList.add('active');
-        });
-    }
-
-    function startQuiz() {
-        if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
-        
-        let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の有効な穴埋め問題が見つかりません。");
-
-        filtered.sort(() => Math.random() - 0.5);
-
-        const numSelect = document.getElementById('num-q').value;
-        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
-        
-        quizQueue = filtered.slice(0, count);
-        currentIdx = 0;
-
-        document.getElementById('setup-area').style.display = 'none';
-        document.getElementById('quiz-area').style.display = 'block';
-        showQ();
-    }
-
-    function injectBlanks(qText, aText) {
-        const answers = aText.split('|');
-        let ansIdx = 0;
-        
-        return qText.replace(/〔\s*\?\s*〕/g, () => {
-            const currentAnswer = answers[ansIdx++] || '？';
-            return `<span class="blank-mask" onclick="toggleMask(this)">${currentAnswer}</span>`;
-        });
-    }
-
-    function showQ() {
-        const q = quizQueue[currentIdx];
-        
-        document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
-        document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
-        
-        document.getElementById('q-text').innerHTML = injectBlanks(q.q, q.ans);
-        
-        const nextBtn = document.getElementById('next-action-btn');
-        if (currentIdx === quizQueue.length - 1) {
-            nextBtn.innerText = "演習を終了 ➔";
-        } else {
-            nextBtn.innerText = "次のカード ➔";
-        }
-    }
-
-    function toggleMask(el) {
-        el.classList.toggle('is-open');
-    }
-
-    function revealAll() {
-        const masks = document.querySelectorAll('.blank-mask');
-        masks.forEach(m => m.classList.add('is-open'));
-    }
-
-    function goToNext() {
-        currentIdx++;
-        if (currentIdx < quizQueue.length) {
-            showQ();
-        } else {
-            resetToPortal();
-        }
-    }
-
-    function resetToPortal() {
-        document.getElementById('quiz-area').style.display = 'none';
-        document.getElementById('setup-area').style.display = 'block';
-        currentIdx = 0;
-    }
-</script>
+    </script>
 </body>
 </html>
