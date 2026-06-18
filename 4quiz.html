@@ -244,4 +244,105 @@
         if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
         if (allData.length === 0) return alert("データが読み込まれていません。CSVファイルを確認してください。");
         
-        let filtered = allData.filter(d => selectedChapters.
+        let filtered = allData.filter(d => selectedChapters.has(d.ch));
+        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
+
+        filtered.sort(() => Math.random() - 0.5);
+
+        const numSelect = document.getElementById('num-q').value;
+        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
+        
+        quizQueue = filtered.slice(0, count);
+        currentIdx = 0;
+
+        document.getElementById('setup-area').style.display = 'none';
+        document.getElementById('quiz-area').style.display = 'block';
+        showQ();
+    }
+
+    // 誤答を他のデータからランダム抽出して4択を作るロジック
+    function generateChoices(correctAns, currentCh) {
+        let pool = allData.filter(d => d.ch === currentCh).map(d => d.ans.split('|')[0].trim());
+        let allAnswers = [...new Set(pool)];
+        
+        if (allAnswers.length < 4) {
+            pool = allData.map(d => d.ans.split('|')[0].trim());
+            allAnswers = [...new Set(pool)];
+        }
+        
+        allAnswers = allAnswers.filter(a => a !== correctAns && a !== '');
+        allAnswers.sort(() => Math.random() - 0.5);
+        let choices = allAnswers.slice(0, 3);
+        
+        choices.push(correctAns);
+        choices.sort(() => Math.random() - 0.5);
+        
+        return choices;
+    }
+
+    function showQ() {
+        const q = quizQueue[currentIdx];
+        
+        document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
+        document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
+        
+        let displayQuestion = q.q.replace(/〔\s*\?\s*〕/g, '（  ）');
+        document.getElementById('q-text').innerText = displayQuestion;
+        
+        let correctAns = q.ans.split('|')[0].trim();
+        let choices = generateChoices(correctAns, q.ch);
+        
+        let choicesBox = document.getElementById('choices-box');
+        choicesBox.innerHTML = '';
+        
+        choices.forEach(choice => {
+            let btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice;
+            btn.onclick = () => checkAnswer(btn, choice, correctAns);
+            choicesBox.appendChild(btn);
+        });
+
+        document.getElementById('next-action-btn').style.visibility = 'hidden';
+    }
+
+    function checkAnswer(selectedBtn, selectedAns, correctAns) {
+        const buttons = document.querySelectorAll('.choice-btn');
+        
+        buttons.forEach(b => {
+            b.classList.add('disabled');
+            if (b.innerText === correctAns) {
+                b.classList.add('correct');
+            }
+        });
+
+        if (selectedAns !== correctAns) {
+            selectedBtn.classList.add('incorrect');
+        }
+
+        const nextBtn = document.getElementById('next-action-btn');
+        if (currentIdx === quizQueue.length - 1) {
+            nextBtn.innerText = "演習を終了 ➔";
+        } else {
+            nextBtn.innerText = "次のカード ➔";
+        }
+        nextBtn.style.visibility = 'visible';
+    }
+
+    function goToNext() {
+        currentIdx++;
+        if (currentIdx < quizQueue.length) {
+            showQ();
+        } else {
+            resetToPortal();
+        }
+    }
+
+    function resetToPortal() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('setup-area').style.display = 'block';
+        currentIdx = 0;
+    }
+</script>
+</body>
+</html>
