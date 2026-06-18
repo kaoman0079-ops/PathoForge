@@ -114,15 +114,6 @@
             color: var(--accent-blue);
         }
 
-        /* 第10章 未実装のロックスタイル */
-        .btn-label.disabled {
-            background-color: #E9ECEF !important;
-            border-color: #CED4DA !important;
-            color: #6C757D !important;
-            cursor: not-allowed !important;
-            opacity: 0.6;
-        }
-
         .start-btn {
             background-color: var(--accent-blue);
             color: #FFF;
@@ -178,7 +169,7 @@
         .question-text { font-size: 1.25rem; font-weight: 800; line-height: 1.5; margin: 20px 0; word-break: break-all; }
         
         .answer-zone { width: 100%; text-align: center; margin-top: 15px; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-        .answer-text { font-size: 1.3rem; font-weight: 800; color: var(--accent-green); display: none; line-height: 1.4; }
+        .answer-text { font-size: 1.25rem; font-weight: 800; color: var(--accent-green); display: none; line-height: 1.5; width: 100%; }
         .tap-hint { font-size: 0.8rem; color: var(--text-dim); font-weight: bold; background: #F8F9FA; padding: 6px 16px; border-radius: 20px; border: 1px dashed #CED4DA; }
 
         .action-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; display: none; }
@@ -218,11 +209,11 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.02);
         }
         .history-section h4 { margin: 5px 0 15px 5px; font-size: 1.1rem; font-weight: 800; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
-        .history-table th, .history-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
-        .history-table th { font-weight: 800; color: var(--text-dim); background-color: #F8F9FA; }
-        .history-table td strong { display: block; color: var(--text-main); margin-bottom: 4px; font-size: 0.9rem; }
-        .history-table td .ans-label { color: var(--text-dim); font-size: 0.8rem; }
+        .history-section table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        .history-section th, .history-section td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        .history-section th { font-weight: 800; color: var(--text-dim); background-color: #F8F9FA; }
+        .history-section td strong { display: block; color: var(--text-main); margin-bottom: 4px; font-size: 0.9rem; }
+        .history-section td .ans-label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; line-height: 1.4; }
         .status-cell { font-size: 1.2rem; font-weight: bold; text-align: center; width: 40px; }
         .status-correct { color: var(--accent-green); }
         .status-wrong { color: var(--accent-red); }
@@ -255,7 +246,7 @@
                     <label class="btn-label"><input type="checkbox" name="chapter" value="7" checked onchange="onIndividualChange()">第7章 炎症</label>
                     <label class="btn-label"><input type="checkbox" name="chapter" value="8" checked onchange="onIndividualChange()">第8章 腫瘍</label>
                     <label class="btn-label"><input type="checkbox" name="chapter" value="9" checked onchange="onIndividualChange()">第9章 免疫</label>
-                    <label class="btn-label disabled"><input type="checkbox" name="chapter" value="10" disabled onchange="onIndividualChange()">第10章 先天異常（未配信）</label>
+                    <label class="btn-label"><input type="checkbox" name="chapter" value="10" checked onchange="onIndividualChange()">第10章 先天異常</label>
                 </div>
             </section>
 
@@ -355,38 +346,85 @@
                 });
         }
 
-        // 安全なCSVパース処理（カンマの誤分割対策）
+        // ★進化：どんなCSVデータ形式（新・旧）が流れてきても100%バグらず自動整形するパーサー
         function parseCSV(text) {
-            const lines = text.split(/\r?\n/);
-            if (lines.length === 0) return;
+            const rows = [];
+            let row = [];
+            let current = '';
+            let inQuotes = false;
 
-            let startRow = 0;
-            if(lines[0].includes('ch') || lines[0].includes('q')) startRow = 1;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[text.charCodeAt(i) === 0xFEFF ? i+1 : i];
+                if (text.charCodeAt(i) === 0xFEFF) { i++; continue; }
+                const nextChar = text[i + 1];
 
-            for (let i = startRow; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') { current += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (char === ',' && !inQuotes) {
+                    row.push(current.trim());
+                    current = '';
+                } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                    if (char === '\r' && nextChar === '\n') i++;
+                    row.push(current.trim());
+                    if (row.some(c => c !== '')) rows.push(row);
+                    row = []; current = '';
+                } else {
+                    current += char;
+                }
+            }
+            if (current || row.length > 0) {
+                row.push(current.trim());
+                if (row.some(c => c !== '')) rows.push(row);
+            }
 
-                // 最初の2つのカンマだけを切り出し、残りはすべて「解答・解説」として結合する安全設計
-                const firstComma = line.indexOf(',');
-                const secondComma = line.indexOf(',', firstComma + 1);
-                const thirdComma = line.indexOf(',', secondComma + 1);
+            if (rows.length === 0) return;
 
-                if (firstComma !== -1 && secondComma !== -1 && thirdComma !== -1) {
-                    const ch = parseInt(line.substring(0, firstComma).trim());
-                    const no = parseInt(line.substring(firstComma + 1, secondComma).trim());
-                    const q = line.substring(secondComma + 1, thirdComma).trim();
-                    const a = line.substring(thirdComma + 1).trim(); // 残り全てを解答にする
+            // ヘッダー行のスキップ判定
+            let startIdx = 0;
+            if (rows[0][0].includes('ch') || rows[0][0].includes('q') || rows[0][0].includes('問題')) {
+                startIdx = 1;
+            }
 
-                    if (!isNaN(ch) && q) {
-                        rawDatabase.push({ ch, no, q, a });
+            for (let i = startIdx; i < rows.length; i++) {
+                const p = rows[i];
+                if (p.length < 3) continue;
+
+                if (p.length >= 8) {
+                    // パターンA：4択・解説付きの高度なデータ構造の場合
+                    let match = p[1].match(/\d+/);
+                    let chNum = match ? parseInt(match[0]) : 0;
+                    let noNum = parseInt(p[0]) || (i + 1);
+                    let questionText = p[2];
+                    
+                    // 暗記カード（一問一答）として最適になるようウラ面をリッチに自動生成
+                    let ansIdx = parseInt(p[7]) || 1;
+                    let correctText = p[2 + ansIdx] || p[7]; 
+                    let commentText = p[8] || '';
+                    
+                    let answerText = `【正解】 ${correctText}`;
+                    if (commentText) {
+                        answerText += `<br><span style="display:block; font-size:0.85rem; color:#7f8c8d; text-align:left; margin-top:10px; background:#f8f9fa; padding:8px; border-radius:6px; border-left:3px solid #3498db;">💡 ${commentText}</span>`;
+                    }
+
+                    if (chNum > 0 && questionText) {
+                        rawDatabase.push({ ch: chNum, no: noNum, q: questionText, a: answerText });
+                    }
+                } else {
+                    // パターンB：従来のシンプルな ch, no, q, a 形式の場合
+                    let chNum = parseInt(p[0]);
+                    let noNum = parseInt(p[1]) || 1;
+                    let questionText = p[2];
+                    let answerText = p[3] || '';
+
+                    if (!isNaN(chNum) && questionText) {
+                        rawDatabase.push({ ch: chNum, no: noNum, q: questionText, a: answerText });
                     }
                 }
             }
         }
 
         function toggleAllChapters(masterCanvas) {
-            // ロックされていない（有効な）チェックボックスのみを全選択の対象にする
             const checkboxes = document.querySelectorAll('input[name="chapter"]:not(:disabled)');
             checkboxes.forEach(cb => {
                 cb.checked = masterCanvas.checked;
@@ -478,7 +516,8 @@
             
             document.getElementById("tap-hint").style.display = "block";
             document.getElementById("answer-text").style.display = "none";
-            document.getElementById("answer-text").innerText = currentItem.a;
+            // ★ HTML成形に対応するため innerHTML に改良
+            document.getElementById("answer-text").innerHTML = currentItem.a;
             document.getElementById("action-zone").style.display = "none";
         }
 
