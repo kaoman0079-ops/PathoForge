@@ -5,41 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PathoForge - 穴埋め演習</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; text-align: center; }
+        /* 全体ベーススタイル */
+        body { font-family: -apple-system, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; text-align: center; color: #2c3e50; }
         .container { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* ポータル・戻るボタン */
         .portal-btn { background: #fff; border: 1px solid #ddd; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: inline-block; margin-bottom: 20px; text-decoration: none; color: #555; }
-        h2 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 30px; }
+        .back-btn { background: #fff; border: 1px solid #ccd1d9; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: inline-block; margin-bottom: 20px; color: #555; font-weight: bold; border-style: solid; }
+        .back-btn:hover { background: #f8f9fa; }
+
+        h2 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 30px; font-weight: bold; }
+        
+        /* 1. 設定画面用スタイル */
         .setting-item { margin-bottom: 20px; text-align: left; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 0.95rem; }
         select { width: 100%; padding: 14px; font-size: 1rem; border-radius: 12px; border: 1px solid #ccd1d9; background-color: #fff; font-weight: 600; color: #2c3e50; outline: none; box-sizing: border-box; }
         .start-btn { width: 100%; padding: 16px; background-color: #3498db; color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 25px; transition: background 0.2s; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
         .start-btn:hover { background-color: #2980b9; }
         .chapter-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        .ch-btn { flex: 1; padding: 12px; border: 1px solid #ccd1d9; background: #fff; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+        .ch-btn { flex: 1; padding: 12px; border: 1px solid #ccd1d9; background: #fff; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.15s; color: #2c3e50; }
         .ch-btn.active { background: #3498db; color: white; border-color: #3498db; }
-        .all-btn { width: 100%; padding: 12px; border: 1px solid #ccd1d9; background: #f8f9fa; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 25px; }
+        .all-btn { width: 100%; padding: 12px; border: 1px solid #ccd1d9; background: #f8f9fa; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 25px; color: #555; }
 
-        /* クイズ画面・結果画面用の追加スタイル */
-        .quiz-view, .result-view { display: none; }
-        .progress-bar { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #7f8c8d; font-weight: bold; margin-bottom: 15px; padding: 0 5px; }
-        .q-card { background: #fff; border: 1px solid #ccd1d9; border-radius: 20px; padding: 35px 20px; min-height: 120px; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.02); position: relative; }
-        .card-tag { font-size: 0.8rem; background: #e0f0ff; color: #3498db; padding: 4px 12px; border-radius: 12px; display: inline-block; margin-bottom: 15px; font-weight: bold; }
-        .question-text { font-size: 1.2rem; font-weight: bold; line-height: 1.6; color: #2c3e50; word-break: break-all; }
+        /* 2. クイズ画面用スタイル（元の美しさを完全復元） */
+        .quiz-view { display: none; }
+        .quiz-card { background: #fff; border: 1px solid #ccd1d9; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 20px; position: relative; }
         
-        .answer-zone { margin-top: 25px; padding-top: 20px; border-top: 2px dashed #e2e8f0; text-align: left; display: none; }
-        .ans-title { font-size: 0.9rem; color: #7f8c8d; font-weight: bold; margin-bottom: 5px; }
-        .ans-text { font-size: 1.3rem; font-weight: bold; color: #e74c3c; margin-bottom: 15px; }
-        .exp-text { font-size: 0.95rem; line-height: 1.5; color: #34495e; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #95a5a6; font-weight: bold; margin-bottom: 25px; border-bottom: 1px solid #f1f2f6; padding-bottom: 12px; }
         
-        .action-zone { display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: #FFF; border: 1px solid #ccd1d9; border-radius: 14px; overflow: hidden; margin-top: 15px; }
-        .history-table th, .history-table td { padding: 12px; border-bottom: 1px solid #ccd1d9; vertical-align: top; }
-        .history-table th { background: #f8f9fa; font-weight: bold; }
+        .card-body { font-size: 1.25rem; font-weight: bold; line-height: 1.8; color: #2c3e50; word-break: break-all; min-height: 140px; padding: 10px 5px; }
+        
+        /* ★ 穴埋め単語の極上スタイル（暗記シートの再現） */
+        .blank-word {
+            background-color: #2c3e50; /* 未開封時：濃い紺色のマスク */
+            color: #2c3e50;
+            padding: 2px 10px;
+            margin: 0 4px;
+            border-radius: 8px;
+            display: inline-block;
+            cursor: pointer;
+            font-weight: bold;
+            border: 1px solid #2c3e50;
+            transition: background-color 0.2s, color 0.2s;
+            user-select: none;
+            vertical-align: middle;
+        }
+        /* ★ タップして開封された時のスタイル */
+        .blank-word.open {
+            background-color: #e0f0ff; /* 爽やかな薄い青 */
+            color: #3498db;            /* 文字は鮮やかな青 */
+            border-color: #b3d7ff;
+        }
+
+        /* 下部アクションボタン */
+        .card-actions { display: flex; gap: 15px; margin-top: 10px; }
+        .action-btn { flex: 1; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.2s; border: none; }
+        .btn-outline { background-color: #ffffff; color: #555; border: 1px solid #ccd1d9; }
+        .btn-outline:hover { background-color: #f8f9fa; }
+        .btn-primary { background-color: #3498db; color: white; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); }
+        .btn-primary:hover { background-color: #2980b9; }
+
+        /* 3. 終了画面 */
+        .result-view { display: none; }
     </style>
 </head>
 <body>
 
-    <a href="#" class="portal-btn">🧬 病理学ポータル</a>
+    <div id="nav-zone">
+        <a href="#" class="portal-btn" id="portal-btn">🧬 病理学ポータル</a>
+        <button class="back-btn" id="back-btn" style="display: none;" onclick="backToSetup()">➔ 設定に戻る</button>
+    </div>
 
     <div id="setup-view" class="container">
         <h2>穴埋め演習 設定</h2>
@@ -75,57 +110,34 @@
     </div>
 
     <div id="quiz-view" class="container quiz-view">
-        <div class="progress-bar">
-            <span id="current-index">第 1 問 / 全 10 問</span>
-            <span id="current-score">覚えた: 0</span>
-        </div>
-
-        <div class="q-card">
-            <div class="card-tag" id="card-tag">8章 No.1</div>
-            <div class="question-text" id="question-text">問題文がここに表示されます。</div>
-            
-            <div class="answer-zone" id="answer-zone">
-                <div class="ans-title">正解：</div>
-                <div class="ans-text" id="answer-text">ここに正解キーワード</div>
-                <div class="ans-title">解説：</div>
-                <div class="exp-text" id="explanation-text">ここに解説が表示されます。</div>
+        <div class="quiz-card">
+            <div class="card-header">
+                <span id="card-count">カード 1 / 10</span>
+                <span id="card-meta">病理学 ➔ 8章</span>
             </div>
+            
+            <div class="card-body" id="card-body"></div>
         </div>
 
-        <button id="show-answer-btn" class="start-btn" style="background-color: #2ecc71; margin-top: 0;" onclick="revealAnswer()">答えを表示する 👁️</button>
-        
-        <div id="action-zone" class="action-zone">
-            <button class="start-btn" style="background-color: #e74c3c; margin-top: 0;" onclick="submitRecord(false)">❌ 間違えた</button>
-            <button class="start-btn" style="background-color: #2ecc71; margin-top: 0;" onclick="submitRecord(true)">⭕ 正解！</button>
+        <div class="card-actions">
+            <button class="action-btn btn-outline" onclick="revealAllAnswers()">答えを表示する 👁️</button>
+            <button class="action-btn btn-primary" onclick="nextCard()">次のカード ➔</button>
         </div>
     </div>
 
     <div id="result-view" class="container result-view">
         <h2>演習終了！</h2>
-        <div id="final-score" style="font-size: 2rem; font-weight: 900; color: #3498db; margin: 20px 0;">0 / 0 正解</div>
-        <button class="start-btn" onclick="resetApp()">最初に戻る 🔄</button>
-
-        <h3 style="text-align: left; margin-top: 30px; color: #2c3e50;">📊 今回の記録</h3>
-        <table class="history-table">
-            <thead>
-                <tr>
-                    <th style="text-align: left;">問題内容</th>
-                    <th style="text-align: center; width: 60px;">結果</th>
-                </tr>
-            </thead>
-            <tbody id="history-table-body"></tbody>
-        </table>
+        <p style="font-size: 1.1rem; margin-bottom: 30px;">お疲れ様でした。すべてのカードを確認しました！</p>
+        <button class="start-btn" onclick="backToSetup()">設定に戻る 🔄</button>
     </div>
 
     <script>
         let database = [];
         let quizQueue = [];
         let currentIndex = 0;
-        let score = 0;
-        let quizHistory = [];
 
-        // ページ読み込み時にCSVを取得し、ボタンイベントを設定
         window.addEventListener('DOMContentLoaded', () => {
+            // 章選択ボタンのトグルイベント
             document.querySelectorAll('.ch-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     btn.classList.toggle('active');
@@ -145,10 +157,10 @@
                     return res.text();
                 })
                 .then(text => parseCSV(text))
-                .catch(() => console.log("data.csvの読み込み待ち、または構成確認中"));
+                .catch(() => console.log("data.csvの読み込みに失敗、または待機中"));
         }
 
-        // 柔軟なCSVパーサー（[章, 番号, 問題, 解答, 解説] などの列ズレを自動判別）
+        // CSVを正しく1つの文章として復元する堅牢なパーサー
         function parseCSV(text) {
             const lines = [];
             let row = [];
@@ -176,44 +188,42 @@
             }
             if (curr || row.length > 0) { row.push(curr.trim()); if (row.some(c => c !== '')) lines.push(row); }
 
-            let startIdx = 0;
-            if (lines.length > 0 && (lines[0].some(c => c.includes('章') || c.includes('問題') || c.includes('ch')))) {
-                startIdx = 1;
-            }
-
             database = [];
+            let startIdx = (lines.length > 0 && lines[0].some(c => c.includes('章') || c.includes('ch'))) ? 1 : 0;
+
             for (let i = startIdx; i < lines.length; i++) {
                 const cols = lines[i];
                 if (cols.length < 2) continue;
 
-                let chapter = "8"; 
-                let no = i + 1;
-                let question = "";
-                let answer = "";
-                let explanation = "解説はありません。";
-
-                if (cols.length === 2) {
-                    question = cols[0]; answer = cols[1];
-                } else if (cols.length === 3) {
-                    if (cols[0].includes('章') || !isNaN(parseInt(cols[0]))) {
-                        chapter = cols[0].replace('章', ''); question = cols[1]; answer = cols[2];
-                    } else {
-                        question = cols[0]; answer = cols[1]; explanation = cols[2];
-                    }
-                } else if (cols.length === 4) {
-                    chapter = cols[0].replace('章', ''); question = cols[1]; answer = cols[2]; explanation = cols[3];
-                } else if (cols.length >= 5) {
-                    chapter = cols[0].replace('章', ''); no = cols[1]; question = cols[2]; answer = cols[3];
-                    explanation = cols.slice(4).join(', ');
+                let chapter = cols[0].replace('章', '').trim();
+                let no = cols[1] ? cols[1].trim() : (i + 1);
+                
+                // 【超重要】8章のように途中にカンマが入って分割されてしまっても、
+                // 3列目以降をすべて綺麗に再結合して1つの文章に戻すロジック
+                let fullText = cols.slice(2).join(', ').trim();
+                
+                if (!fullText && cols.length === 2) {
+                    fullText = cols[1];
+                    no = i + 1;
                 }
 
-                if (question && answer) {
-                    database.push({ chapter: chapter.trim(), no: no, q: question, a: answer, exp: explanation });
+                if (fullText) {
+                    database.push({ chapter: chapter, no: no, text: fullText });
                 }
             }
         }
 
-        // クイズ開始（出題順序ロジックを完全統合）
+        // カッコ ( ) や （ ） をタップ可能な穴埋めスパンに変換するマジック
+        function formatQuestionText(text) {
+            if (!text) return "";
+            // 全角・半角のカッコとその中身にマッチする正規表現
+            const regex = /[（\(]([^）)]+)[）\)]/g;
+            return text.replace(regex, (match, p1) => {
+                return `<span class="blank-word" onclick="this.classList.toggle('open')">${p1}</span>`;
+            });
+        }
+
+        // クイズ開始処理（出題順序を完全統合）
         function startQuiz() {
             const activeChapters = [];
             document.querySelectorAll('.ch-btn.active').forEach(btn => {
@@ -232,7 +242,7 @@
                 return;
             }
 
-            // 【新機能】出題順序のソート処理
+            // 【新機能】出題順序の並び替えロジック
             const orderVal = document.getElementById('quiz-order').value;
             if (orderVal === 'shuffle') {
                 filtered.sort(() => Math.random() - 0.5);
@@ -245,80 +255,61 @@
                 });
             }
 
-            // 出題数の切り出し
+            // 出題数の決定
             const countVal = document.getElementById('quiz-count').value;
             let limit = countVal === 'all' ? filtered.length : Math.min(parseInt(countVal), filtered.length);
             
             quizQueue = filtered.slice(0, limit);
-            currentIndex = 0; score = 0; quizHistory = [];
+            currentIndex = 0;
 
+            // 画面の切り替え
             document.getElementById('setup-view').style.display = 'none';
+            document.getElementById('portal-btn').style.display = 'none';
             document.getElementById('quiz-view').style.display = 'block';
-            showQuestion();
+            document.getElementById('back-btn').style.display = 'inline-block';
+            
+            showCard();
         }
 
-        function showQuestion() {
-            document.getElementById('answer-zone').style.display = 'none';
-            document.getElementById('show-answer-btn').style.display = 'block';
-            document.getElementById('action-zone').style.display = 'none';
-
+        // カードの描画
+        function showCard() {
             const item = quizQueue[currentIndex];
-            document.getElementById('current-index').innerText = `第 ${currentIndex + 1} 問 / 全 ${quizQueue.length} 問`;
-            document.getElementById('current-score').innerText = `覚えた: ${score}`;
-            document.getElementById('card-tag').innerText = `${item.chapter}章 No.${item.no}`;
-            document.getElementById('question-text').innerText = item.q;
-            document.getElementById('answer-text').innerText = item.a;
-            document.getElementById('explanation-text').innerText = item.exp;
+            
+            document.getElementById('card-count').innerText = `カード ${currentIndex + 1} / ${quizQueue.length}`;
+            document.getElementById('card-meta').innerText = `病理学 ➔ ${item.chapter}章 No.${item.no}`;
+            
+            // カッコを穴埋めパーツに変換して流し込む
+            document.getElementById('card-body').innerHTML = formatQuestionText(item.text);
         }
 
-        function revealAnswer() {
-            document.getElementById('answer-zone').style.display = 'block';
-            document.getElementById('show-answer-btn').style.display = 'none';
-            document.getElementById('action-zone').style.display = 'grid';
-            
-            setTimeout(() => {
-                document.getElementById('answer-zone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 50);
+        // このカードの穴埋めをすべて一斉にオープンする
+        function revealAllAnswers() {
+            document.querySelectorAll('.blank-word').forEach(el => el.classList.add('open'));
         }
 
-        function submitRecord(isCorrect) {
-            if (isCorrect) score++;
-            
-            quizHistory.push({ q: quizQueue[currentIndex].q, a: quizQueue[currentIndex].a, success: isCorrect });
-
+        // 次のカードへ進む
+        function nextCard() {
             currentIndex++;
             if (currentIndex < quizQueue.length) {
-                showQuestion();
+                showCard();
             } else {
                 showResult();
             }
         }
 
+        // 終了画面の表示
         function showResult() {
             document.getElementById('quiz-view').style.display = 'none';
             document.getElementById('result-view').style.display = 'block';
-            document.getElementById('final-score').innerText = `${score} / ${quizQueue.length} 正解`;
-
-            const tbody = document.getElementById('history-table-body');
-            tbody.innerHTML = '';
-            quizHistory.forEach((h, idx) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="text-align: left;">
-                        <strong>${idx + 1}. ${h.q}</strong><br>
-                        <span style="color: #e74c3c; font-weight: bold; font-size: 0.85rem;">答: ${h.a}</span>
-                    </td>
-                    <td style="text-align: center; font-size: 1.2rem; font-weight: bold;">
-                        ${h.success ? '<span style="color:#2ecc71">⭕</span>' : '<span style="color:#e74c3c">❌</span>'}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
-        function resetApp() {
+        // 設定画面に戻る（リセット）
+        function backToSetup() {
+            document.getElementById('quiz-view').style.display = 'none';
             document.getElementById('result-view').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
             document.getElementById('setup-view').style.display = 'block';
+            document.getElementById('portal-btn').style.display = 'inline-block';
         }
     </script>
 </body>
