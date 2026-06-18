@@ -7,14 +7,17 @@
     <style>
         /* 全体ベーススタイル */
         body { font-family: -apple-system, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; text-align: center; color: #2c3e50; }
-        .container { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .container { max-width: 600px; margin: 20px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
         /* 戻るボタン */
         .back-btn { background: #fff; border: 1px solid #ccd1d9; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: inline-block; margin-bottom: 20px; color: #555; font-weight: bold; text-decoration: none; }
         .back-btn:hover { background: #f8f9fa; }
 
-        h2 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 30px; font-weight: bold; }
+        h2 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 20px; font-weight: bold; }
         
+        /* 【重要】データ読み込み状態メーター */
+        .status-box { background: #f8f9fa; border: 1px solid #ccd1d9; padding: 12px; border-radius: 12px; margin-bottom: 25px; font-size: 0.9rem; text-align: left; line-height: 1.4; }
+
         /* 設定画面用スタイル */
         .setting-item { margin-bottom: 25px; text-align: left; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 0.95rem; }
@@ -58,6 +61,10 @@
 
     <div id="setup-view" class="container">
         <h2>穴埋め暗記シート 設定</h2>
+
+        <div id="db-status" class="status-box" style="color: #7f8c8d;">
+            ⏳ anadata.csv を読み込み中...
+        </div>
 
         <div class="setting-item">
             <label>出題カテゴリ</label>
@@ -120,16 +127,16 @@
         let currentIndex = 0;
 
         window.addEventListener('DOMContentLoaded', () => {
-            // 章ボタンの複数選択イベント
+            // 章ボタンの切り替え
             document.querySelectorAll('.ch-btn').forEach(btn => {
                 btn.addEventListener('click', () => btn.classList.toggle('active'));
             });
 
-            // 出題順ボタンの単一選択イベント
+            // 出題順ボタンの切り替え
             document.querySelectorAll('.order-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.order-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
+                    e.currentTarget.classList.add('active');
                 });
             });
 
@@ -140,28 +147,36 @@
             document.querySelectorAll('.ch-btn').forEach(btn => btn.classList.add('active'));
         }
 
-        // 【修正】確実に「anadata.csv」を読み込むように修正
         function fetchCSV() {
             fetch('anadata.csv')
                 .then(res => {
-                    if (!res.ok) throw new Error("ファイルが見つかりません");
+                    if (!res.ok) throw new Error("ファイルが見つかりません。ファイル名が「anadata.csv」になっているか確認してください。");
                     return res.text();
                 })
                 .then(text => parseCSV(text))
                 .catch(err => {
-                    console.log("anadata.csv の読み込みに失敗しました。ファイル名を確認してください。");
+                    const statusEl = document.getElementById('db-status');
+                    statusEl.innerHTML = `❌ <strong>データの読み込みに失敗しました</strong><br>` +
+                                          `・原因①: HTMLと同じ場所に <code>anadata.csv</code> がない<br>` +
+                                          `・原因②: ブラウザのセキュリティ制限（file:/// で直接開いている）<br>` +
+                                          `<small style="color:#e74c3c; display:block; margin-top:5px;">※VSCodeのLive Server等を使うと解決します</small>`;
+                    statusEl.style.color = "#e74c3c";
+                    statusEl.style.borderColor = "#e74c3c";
+                    console.error(err);
                 });
         }
 
         function parseCSV(text) {
+            // 【修正】BOM（U+FEFF）の除去を安全に外側で行う
+            text = text.replace(/^\uFEFF/, '');
+
             const lines = [];
             let row = [];
             let curr = '';
             let inQuotes = false;
 
             for (let i = 0; i < text.length; i++) {
-                let char = text[text.charCodeAt(i) === 0xFEFF ? i+1 : i];
-                if (text.charCodeAt(i) === 0xFEFF) { i++; continue; }
+                let char = text[i];
                 let next = text[i+1];
 
                 if (char === '"') {
@@ -182,7 +197,7 @@
 
             database = [];
             let startIdx = 0;
-            if (lines.length > 0 && lines[0].some(c => c.includes('章') || c.includes('ch') || c.includes('No'))) {
+            if (lines.length > 0 && lines[0].some(c => c.includes('章') || c.includes('ch') || c.includes('No') || c.includes('問題'))) {
                 startIdx = 1; 
             }
 
@@ -190,9 +205,15 @@
                 const cols = lines[i];
                 if (cols.length < 3) continue;
 
-                let chapter = cols[0].replace(/[^0-9]/g, '').trim();
-                let no = cols[1] ? parseInt(cols[1].replace(/[^0-9]/g, '')) : (i + 1);
-                if (isNaN(no)) no = i + 1;
+                // 安全に章の数字を抽出
+                let chapterStr = cols[0] || "";
+                let matchCh = chapterStr.match(/\d+/);
+                let chapter = matchCh ? matchCh[0] : chapterStr.replace(/[^0-9]/g, '').trim();
+
+                // 安全にNoの数字を抽出
+                let noStr = cols[1] || "";
+                let matchNo = noStr.match(/\d+/);
+                let no = matchNo ? parseInt(matchNo[0]) : (i + 1);
 
                 let question = cols[2] ? cols[2].trim() : "";
                 let answer = cols[3] ? cols[3].trim() : "";
@@ -202,9 +223,26 @@
                     database.push({ chapter: chapter, no: no, question: question, answer: answer, explanation: explanation });
                 }
             }
+
+            // 【新設】画面上部のメーターを「成功表示」に更新
+            const statusEl = document.getElementById('db-status');
+            if (database.length > 0) {
+                statusEl.innerHTML = `✅ <strong>anadata.csv</strong> から <strong>${database.length}件</strong> のデータを正常に読み込みました！`;
+                statusEl.style.color = "#27ae60";
+                statusEl.style.borderColor = "#27ae60";
+            } else {
+                statusEl.innerHTML = `⚠️ ファイルは開けましたが、有効なデータが0件です。列の並び（章, No, 問題, 正解）を確認してください。`;
+                statusEl.style.color = "#e67e22";
+                statusEl.style.borderColor = "#e67e22";
+            }
         }
 
         function startQuiz() {
+            if (database.length === 0) {
+                alert('CSVデータが読み込まれていません。画面上部の赤いエラーメッセージを確認してください。');
+                return;
+            }
+
             const activeChapters = [];
             document.querySelectorAll('.ch-btn.active').forEach(btn => {
                 activeChapters.push(btn.getAttribute('data-ch'));
@@ -215,21 +253,48 @@
                 return;
             }
 
-            // 選択された章でフィルタリング
-            let filtered = database.filter(item => activeChapters.includes(item.chapter));
+            // 文字列と数値の両方の可能性を考慮してフィルタリング
+            let filtered = database.filter(item => {
+                return activeChapters.includes(item.chapter) || 
+                       activeChapters.includes(parseInt(item.chapter).toString());
+            });
 
             if (filtered.length === 0) {
-                alert('選択された章の問題が見つかりませんでした。');
+                alert('選択された章（' + activeChapters.join(', ') + '章）の問題が見つかりませんでした。CSVの1列目に正しい章番号が入っているか確認してください。');
                 return;
             }
 
-            // 【新設】ユーザーが選んだ出題順（順番通り or ランダム）を判定して処理
-            const orderStyle = document.querySelector('.order-btn.active').getAttribute('data-order');
+            // 【修正】選んだ出題順（順番通り or ランダム）を安全に実行
+            const orderActive = document.querySelector('.order-btn.active');
+            const orderStyle = orderActive ? orderActive.getAttribute('data-order') : 'sequence';
+            
             if (orderStyle === 'random') {
-                // ランダムシャッフル
                 filtered.sort(() => Math.random() - 0.5);
             } else {
-                // 順番通り（章 ➔ No.順にきれいにソート）
+                // 順番通り（NaNエラーを絶対に起こさない安全な数値ソート）
                 filtered.sort((a, b) => {
-                    if (parseInt(a.chapter) !== parseInt(b.chapter)) {
-                        return parseInt(a.chapter) - parseInt(b.
+                    const chA = parseInt(a.chapter) || 0;
+                    const chB = parseInt(b.chapter) || 0;
+                    if (chA !== chB) return chA - chB;
+                    
+                    const noA = parseInt(a.no) || 0;
+                    const noB = parseInt(b.no) || 0;
+                    return noA - noB;
+                });
+            }
+
+            const countVal = document.getElementById('quiz-count').value;
+            let limit = countVal === 'all' ? filtered.length : Math.min(parseInt(countVal), filtered.length);
+            
+            quizQueue = filtered.slice(0, limit);
+            currentIndex = 0;
+
+            document.getElementById('setup-view').style.display = 'none';
+            document.getElementById('quiz-view').style.display = 'block';
+            document.getElementById('back-btn').style.display = 'inline-block';
+            
+            showCard();
+        }
+
+        function showCard() {
+            const item
