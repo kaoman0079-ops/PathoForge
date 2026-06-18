@@ -5,275 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PathoForge 4択クイズ</title>
     <style>
-        :root {
-            --main-bg: #F4F6F9;
-            --card-bg: #FFFFFF;
-            --primary: #3498db;
-            --primary-light: #ebf5fb;
-            --text-main: #2C3E50;
-            --text-dim: #7F8C8D;
-            --border-color: #E1E8ED;
-            --success: #2ecc71; /* 正解のグリーン */
-            --error: #e74c3c;   /* 不正解のレッド */
-        }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--main-bg); margin: 0; padding: 20px; color: var(--text-main); -webkit-text-size-adjust: 100%;
-        }
-
-        .container { max-width: 600px; margin: 0 auto; position: relative; }
-
-        /* 上部ナビゲーション */
+        :root { --main-bg: #F4F6F9; --card-bg: #FFFFFF; --primary: #3498db; --primary-light: #ebf5fb; --text-main: #2C3E50; --text-dim: #7F8C8D; --border-color: #E1E8ED; --success: #2ecc71; --error: #e74c3c; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--main-bg); margin: 0; padding: 20px; color: var(--text-main); }
+        .container { max-width: 600px; margin: 0 auto; }
         .nav-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .back-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-        /* 設定画面 */
-        h1 { font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--text-main); }
+        .back-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; text-decoration: none; }
+        h1 { font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 25px; }
         .section-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dim); margin: 20px 0 8px 5px; }
         .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .btn-check { padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.2s; }
+        .btn-check { padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; cursor: pointer; font-weight: bold; transition: all 0.2s; }
         .btn-check.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-        .btn-all { grid-column: span 3; margin-top: 5px; background: #fafafa; }
-        select { width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; font-size: 1rem; font-weight: bold; color: var(--text-main); outline: none; }
-        .start-btn { width: 100%; padding: 16px; background: #27ae60; color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2); }
-
-        /* クイズ画面 */
+        .btn-all { grid-column: span 3; }
+        select { width: 100%; padding: 14px; border: 2px solid var(--border-color); border-radius: 14px; background: white; font-size: 1rem; font-weight: bold; }
+        .start-btn { width: 100%; padding: 16px; background: #27ae60; color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 30px; }
         #quiz-area { display: none; }
-        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        .card-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; }
-        
-        /* 問題文テキスト */
-        .question-body { 
-            font-size: 1.1rem; 
-            font-weight: 600; 
-            line-height: 1.9; 
-            color: var(--text-main); 
-            margin-bottom: 25px; 
-            word-break: break-all;
-            letter-spacing: 0.02em;
-        }
-
-        /* 4択ボタンエリア */
+        .quiz-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 30px 25px; min-height: 320px; }
+        .question-body { font-size: 1.1rem; font-weight: 600; line-height: 1.9; margin-bottom: 25px; }
         .choices-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .choice-btn { 
-            width: 100%; padding: 16px 20px; background: white; 
-            border: 2px solid var(--border-color); border-radius: 14px; 
-            font-size: 1rem; font-weight: 600; text-align: left; 
-            cursor: pointer; transition: all 0.15s ease; color: var(--text-main);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.01); outline: none;
-        }
-        .choice-btn:active { transform: scale(0.99); }
-        
-        /* 正解・不正解のカラー反映 */
+        .choice-btn { width: 100%; padding: 16px 20px; background: white; border: 2px solid var(--border-color); border-radius: 14px; text-align: left; cursor: pointer; }
         .choice-btn.correct { background-color: var(--success) !important; border-color: var(--success) !important; color: white !important; }
         .choice-btn.incorrect { background-color: var(--error) !important; border-color: var(--error) !important; color: white !important; }
         .choice-btn.disabled { pointer-events: none; opacity: 0.6; }
-        .choice-btn.correct.disabled, .choice-btn.incorrect.disabled { opacity: 1; }
-
-        /* 解説ボックス */
-        #commentary-box {
-            margin-bottom: 25px;
-            padding: 15px;
-            background-color: #F8F9FA;
-            border-left: 4px solid var(--primary);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: #34495E;
-            display: none;
-        }
-
-        /* 下部ボタンエリア */
-        .action-area { display: flex; justify-content: flex-end; }
-        .btn-next { 
-            padding: 14px 28px; border-radius: 14px; font-weight: bold; font-size: 1rem; 
-            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; 
-            gap: 8px; transition: all 0.15s; border: none; background-color: var(--primary); color: white; 
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); visibility: hidden; 
-        }
-        .btn-next:active { transform: scale(0.98); }
-
-        @media (max-width: 480px) {
-            body { padding: 10px; }
-            .quiz-card { padding: 25px 18px; }
-            .question-body { font-size: 1.05rem; line-height: 1.8; }
-            .choice-btn { padding: 14px 16px; font-size: 0.95rem; }
-        }
+        #commentary-box { margin-bottom: 25px; padding: 15px; background-color: #F8F9FA; border-left: 4px solid var(--primary); border-radius: 8px; display: none; }
+        .btn-next { padding: 14px 28px; border-radius: 14px; font-weight: bold; cursor: pointer; background-color: var(--primary); color: white; border: none; visibility: hidden; }
     </style>
 </head>
 <body>
-
 <div class="container">
-
     <div id="setup-area">
-        <div class="nav-area">
-            <a href="index.html" class="back-btn">⏎ 病理学ポータル</a>
-        </div>
+        <div class="nav-area"><a href="index.html" class="back-btn">⏎ 病理学ポータル</a></div>
         <h1>4択演習 設定</h1>
-        
         <div class="section-title">出題カテゴリ</div>
         <div class="chapter-grid">
             <button class="btn-check" data-ch="8" onclick="toggleChapter(this)">8章</button>
             <button class="btn-check" data-ch="9" onclick="toggleChapter(this)">9章</button>
             <button class="btn-check" data-ch="10" onclick="toggleChapter(this)">10章</button>
-            <button class="btn-check btn-all" id="all-btn" onclick="selectAllChapters()">全範囲を選択</button>
+            <button class="btn-check btn-all" onclick="selectAllChapters()">全範囲を選択</button>
         </div>
-
         <div class="section-title">出題数</div>
-        <select id="num-q">
-            <option value="5">5問</option>
-            <option value="10">10問</option>
-            <option value="20">20問</option>
-            <option value="all">全問</option>
-        </select>
-
+        <select id="num-q"><option value="5">5問</option><option value="10">10問</option><option value="20">20問</option><option value="all">全問</option></select>
         <button class="start-btn" onclick="startQuiz()">クイズを開始 🚀</button>
     </div>
 
     <div id="quiz-area">
-        <div class="nav-area">
-            <button class="back-btn" onclick="resetToPortal()">➔ 設定に戻る</button>
-        </div>
-
+        <div class="nav-area"><button class="back-btn" onclick="resetToPortal()">➔ 設定に戻る</button></div>
         <div class="quiz-card">
-            <div>
-                <div class="card-header">
-                    <span id="card-progress">カード 1 / 10</span>
-                    <span id="card-category">病理学 ＞ 各論</span>
-                </div>
-                
-                <div class="question-body" id="q-text"></div>
-
-                <div class="choices-container" id="choices-box"></div>
-
-                <div id="commentary-box"></div>
-            </div>
-
-            <div class="action-area">
-                <button class="btn-next" id="next-action-btn" onclick="goToNext()">次のカード ➔</button>
-            </div>
+            <div id="card-progress" style="font-size:0.8rem; color:var(--text-dim);"></div>
+            <div class="question-body" id="q-text"></div>
+            <div class="choices-container" id="choices-box"></div>
+            <div id="commentary-box"></div>
+            <button class="btn-next" id="next-action-btn" onclick="goToNext()">次のカード ➔</button>
         </div>
     </div>
-
 </div>
 
 <script>
     let allData = [], quizQueue = [], currentIdx = 0, selectedChapters = new Set();
 
-    // CSVパーサー（引用符対応型）
-    function parseCSV(text) {
-        const rows = [];
-        let row = [];
-        let current = '';
-        let inQuotes = false;
-
-        for (let i = 0; i < text.length; i++) {
-            const char = text[text.charCodeAt(i) === 0xFEFF ? i+1 : i]; // BOM飛ばし対応
-            if (text.charCodeAt(i) === 0xFEFF) { i++; continue; }
-            
-            const nextChar = text[i + 1];
-
-            if (char === '"') {
-                if (inQuotes && nextChar === '"') {
-                    current += '"';
-                    i++; 
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === ',' && !inQuotes) {
-                row.push(current.trim());
-                current = '';
-            } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                if (char === '\r' && nextChar === '\n') i++;
-                row.push(current.trim());
-                if (row.some(cell => cell !== '')) rows.push(row);
-                row = [];
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        if (current || row.length > 0) {
-            row.push(current.trim());
-            if (row.some(cell => cell !== '')) rows.push(row);
-        }
-        return rows;
-    }
-
-    // CSV読み込み処理
     fetch('data2.csv')
-        .then(r => {
-            if (!r.ok) throw new Error(`ファイルが見つかりません (Status: ${r.status})`);
-            return r.text();
-        })
+        .then(r => r.text())
         .then(text => {
-            const parsedRows = parseCSV(text);
-            
-            // ヘッダー行（1行目）を飛ばしてマッピング
-            allData = parsedRows.slice(1).map(p => {
-                if (p.length < 8) return null; // 最低限、正解列（8列目）までデータがあること
-                
-                // 2列目の「第8章：腫瘍」などから数字だけを抽出する
-                let match = p[1].match(/\d+/);
-                let chNum = match ? parseInt(match[0]) : 0;
-
-                return { 
-                    id: p[0],                   // 問題番号
-                    ch: chNum,                  // 章番号（数値）
-                    chText: p[1],               // 章の表記テキスト
-                    q: p[2],                    // 問題文
-                    choices: [p[3], p[4], p[5], p[6]], // 選択肢1〜4
-                    ans: String(p[7]),          // 正解（"2" や "3・4" など）
-                    comment: p[8] || ''         // 解説まとめ
-                };
-            }).filter(item => item !== null && item.ch > 0);
-
-            if (allData.length === 0) {
-                alert("CSVデータは読み込めましたが、有効な問題データが抽出できませんでした。");
-            }
-        })
-        .catch(err => {
-            console.error("CSV読み込みエラー:", err);
-            alert("【CSV読み込みエラー】\ndata2.csvの形式、または配置場所を確認してください。\n" + err.message);
+            allData = text.split('\n').slice(1).filter(line => line.trim()).map(line => {
+                const p = line.split(',');
+                return { ch: parseInt(p[1]), q: p[2], choices: [p[3], p[4], p[5], p[6]], ans: String(p[7]), comment: p[8] };
+            });
         });
 
     function toggleChapter(btn) {
         const ch = parseInt(btn.dataset.ch);
-        if (selectedChapters.has(ch)) {
-            selectedChapters.delete(ch);
-            btn.classList.remove('active');
-        } else {
-            selectedChapters.add(ch);
-            btn.classList.add('active');
-        }
+        selectedChapters.has(ch) ? selectedChapters.delete(ch) : selectedChapters.add(ch);
+        btn.classList.toggle('active');
     }
 
     function selectAllChapters() {
-        const buttons = document.querySelectorAll('.chapter-grid .btn-check:not(.btn-all)');
-        buttons.forEach(btn => {
-            const ch = parseInt(btn.dataset.ch);
-            selectedChapters.add(ch);
-            btn.classList.add('active');
+        document.querySelectorAll('.btn-check:not(.btn-all)').forEach(b => {
+            selectedChapters.add(parseInt(b.dataset.ch));
+            b.classList.add('active');
         });
     }
 
     function startQuiz() {
-        if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
-        if (allData.length === 0) return alert("データが読み込まれていません。");
-        
-        let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
-
-        // ランダムシャッフル
-        filtered.sort(() => Math.random() - 0.5);
-
-        const numSelect = document.getElementById('num-q').value;
-        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
-        
-        quizQueue = filtered.slice(0, count);
+        if (selectedChapters.size === 0) return alert("章を選択してください。");
+        let filtered = allData.filter(d => selectedChapters.has(d.ch)).sort(() => Math.random() - 0.5);
+        const count = document.getElementById('num-q').value;
+        quizQueue = filtered.slice(0, count === 'all' ? filtered.length : parseInt(count));
         currentIdx = 0;
-
         document.getElementById('setup-area').style.display = 'none';
         document.getElementById('quiz-area').style.display = 'block';
         showQ();
@@ -281,76 +97,34 @@
 
     function showQ() {
         const q = quizQueue[currentIdx];
-        
         document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
-        document.getElementById('card-category').innerText = `病理学 ＞ ${q.chText}`;
         document.getElementById('q-text').innerText = q.q;
-        
-        // 解説ボックスを一旦隠す
-        const commentBox = document.getElementById('commentary-box');
-        commentBox.style.display = 'none';
-        commentBox.innerHTML = '';
-
-        let choicesBox = document.getElementById('choices-box');
-        choicesBox.innerHTML = '';
-        
-        // CSVに用意されている4つの選択肢をそのままボタンとして配置
-        q.choices.forEach((choice, index) => {
-            if (!choice) return; // 空の選択肢はスキップ
-            let btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice;
-            // 選択肢の番号（1〜4）を渡して正誤判定する
-            btn.onclick = () => checkAnswer(btn, index + 1, q.ans, q.comment);
-            choicesBox.appendChild(btn);
+        document.getElementById('commentary-box').style.display = 'none';
+        const box = document.getElementById('choices-box'); box.innerHTML = '';
+        q.choices.forEach((c, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn'; btn.innerText = c;
+            btn.onclick = () => {
+                document.querySelectorAll('.choice-btn').forEach((b, idx) => {
+                    b.classList.add('disabled');
+                    if (q.ans.includes(String(idx + 1))) b.classList.add('correct');
+                });
+                if (!q.ans.includes(String(i + 1))) btn.classList.add('incorrect');
+                if (q.comment) {
+                    const cb = document.getElementById('commentary-box');
+                    cb.innerHTML = `<strong>💡 解説:</strong><br>${q.comment}`;
+                    cb.style.display = 'block';
+                }
+                document.getElementById('next-action-btn').style.visibility = 'visible';
+            };
+            box.appendChild(btn);
         });
-
         document.getElementById('next-action-btn').style.visibility = 'hidden';
     }
 
-    function checkAnswer(selectedBtn, selectedNum, correctAnsStr, commentText) {
-        const buttons = document.querySelectorAll('.choice-btn');
-        
-        // クリックした選択肢番号が、正解文字列（例: "2" や "3・4"）に含まれているか判定
-        let isCorrect = correctAnsStr.includes(String(selectedNum));
-
-        buttons.forEach((b, idx) => {
-            b.classList.add('disabled');
-            let btnNum = idx + 1;
-            // 正解のボタンすべてに緑色の「correct」クラスを付与
-            if (correctAnsStr.includes(String(btnNum))) {
-                b.classList.add('correct');
-            }
-        });
-
-        // 間違ったボタンを押した場合は赤色にする
-        if (!isCorrect) {
-            selectedBtn.classList.add('incorrect');
-        }
-
-        // 解説があれば表示する
-        if (commentText) {
-            const commentBox = document.getElementById('commentary-box');
-            commentBox.innerHTML = `<strong>💡 解説まとめ:</strong><br>${commentText}`;
-            commentBox.style.display = 'block';
-        }
-
-        const nextBtn = document.getElementById('next-action-btn');
-        if (currentIdx === quizQueue.length - 1) {
-            nextBtn.innerText = "演習を終了 ➔";
-        } else {
-            nextBtn.innerText = "次のカード ➔";
-        }
-        nextBtn.style.visibility = 'visible';
-    }
-
     function goToNext() {
-        currentIdx++;
-        if (currentIdx < quizQueue.length) {
-            showQ();
-        } else {
-            resetToPortal();
-        }
+        if (++currentIdx < quizQueue.length) showQ();
+        else resetToPortal();
     }
 
     function resetToPortal() {
