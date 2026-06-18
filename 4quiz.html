@@ -92,8 +92,7 @@
             </div>
             <div class="card-body" id="question-text">問題文読み込み中...</div>
             
-            <div id="options-area">
-                </div>
+            <div id="options-area"></div>
         </div>
         
         <div id="result-message" class="result-msg"></div>
@@ -117,7 +116,6 @@
             document.querySelectorAll('.ch-btn').forEach(btn => {
                 btn.addEventListener('click', () => btn.classList.toggle('active'));
             });
-            // 出題順ボタンの切り替え処理
             document.querySelectorAll('.order-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.order-btn').forEach(b => b.classList.remove('active'));
@@ -131,9 +129,9 @@
             document.querySelectorAll('.ch-btn').forEach(btn => btn.classList.add('active'));
         }
 
+        // --- あなたの元の正常なCSVパース処理 ---
         function fetchCSV() {
             const csvPath = './quizdata.csv'; 
-            
             fetch(csvPath)
                 .then(res => {
                     if (!res.ok) throw new Error("ファイル取得失敗: " + res.status);
@@ -145,9 +143,8 @@
                 .catch(err => {
                     console.error("エラー:", err);
                     const statusEl = document.getElementById('db-status');
-                    statusEl.innerHTML = `❌ <strong>データ読み込み失敗</strong><br>${err.message}<br><span style="font-size:0.8rem; color:#888;">※GitHubにプッシュしてWEB上で確認してください。</span>`;
+                    statusEl.innerHTML = `❌ <strong>データ読み込み失敗</strong><br>${err.message}`;
                     statusEl.style.color = "#e74c3c";
-                    statusEl.style.borderColor = "#e74c3c";
                 });
         }
 
@@ -155,29 +152,71 @@
             text = text.replace(/^\uFEFF/, '');
             database = [];
             
-            const lines = text.split(/\r?\n/);
-            if (lines.length <= 1) return;
+            const rows = [];
+            let currentRow = [];
+            let currentField = '';
+            let inQuotes = false;
 
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
 
-                // 簡易カンマ区切り (Chapter, No, Question, Ans, Option1, Option2, Option3, Option4)
-                const parts = line.split(',');
-                if (parts.length < 8) continue;
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        currentField += '"';
+                        i++; 
+                    } else {
+                        inQuotes = !inQuotes; 
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentField);
+                    currentField = '';
+                } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                    if (char === '\r' && nextChar === '\n') {
+                        i++; 
+                    }
+                    currentRow.push(currentField);
+                    if (currentRow.some(field => field.trim() !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                } else {
+                    currentField += char;
+                }
+            }
+            if (currentField !== '' || currentRow.length > 0) {
+                currentRow.push(currentField);
+                if (currentRow.some(field => field.trim() !== '')) {
+                    rows.push(currentRow);
+                }
+            }
 
-                database.push({
-                    chapter: parts[0].trim(),
-                    no: parts[1].trim(),
-                    question: parts[2].trim(),
-                    ans: parseInt(parts[3].trim()),
-                    options: [
-                        parts[4].trim(),
-                        parts[5].trim(),
-                        parts[6].trim(),
-                        parts[7].trim()
-                    ]
-                });
+            for (let i = 1; i < rows.length; i++) {
+                const parts = rows[i];
+                if (parts.length < 3) continue;
+                
+                let chapter, no, question, ans, options;
+                
+                if (parts.length >= 8) {
+                    chapter = parts[0].trim();
+                    no = parts[1].trim();
+                    question = parts[2].trim();
+                    ans = parseInt(parts[3].trim());
+                    options = [parts[4].trim(), parts[5].trim(), parts[6].trim(), parts[7].trim()];
+                } else {
+                    continue;
+                }
+                
+                if (chapter && question && ans && options.length === 4) {
+                    database.push({
+                        chapter: chapter,
+                        no: no,
+                        question: question,
+                        ans: ans,
+                        options: options
+                    });
+                }
             }
 
             const statusEl = document.getElementById('db-status');
@@ -185,44 +224,29 @@
                 statusEl.innerHTML = `✅ <strong>${database.length}件</strong> のクイズデータ読み込み完了！`;
                 statusEl.style.color = "#27ae60";
                 statusEl.style.borderColor = "#27ae60";
-            } else {
-                statusEl.innerHTML = `⚠️ データが0件です`;
-                statusEl.style.color = "#e67e22";
-                statusEl.style.borderColor = "#e67e22";
             }
         }
 
         function startQuiz() {
-            if (database.length === 0) {
-                alert('データが読み込まれていません');
-                return;
-            }
+            if (database.length === 0) return;
 
             const activeChapters = [];
             document.querySelectorAll('.ch-btn.active').forEach(btn => {
                 activeChapters.push(btn.getAttribute('data-ch'));
             });
 
-            if (activeChapters.length === 0) {
+            let filtered = database.filter(item => activeChapters.includes(item.chapter));
+            if (filtered.length === 0) {
                 alert('章を選択してください');
                 return;
             }
 
-            let filtered = database.filter(item => activeChapters.includes(item.chapter));
-
-            if (filtered.length === 0) {
-                alert('選択された章に問題がありません');
-                return;
-            }
-
-            // 【追加】出題順の判定とソートロジック
             const orderActive = document.querySelector('.order-btn.active');
             const orderStyle = orderActive ? orderActive.getAttribute('data-order') : 'sequence';
             
             if (orderStyle === 'random') {
                 filtered.sort(() => Math.random() - 0.5);
             } else {
-                // 順番通り（章 -> No の昇順）
                 filtered.sort((a, b) => (parseInt(a.chapter) - parseInt(b.chapter)) || (parseInt(a.no) - parseInt(b.no)));
             }
 
@@ -240,6 +264,7 @@
             showCard();
         }
 
+        // --- あなたの元の正常な4択クイズの画面表示ロジック ---
         function showCard() {
             if (currentIndex >= quizQueue.length) return;
             
@@ -273,11 +298,10 @@
             const item = quizQueue[currentIndex];
             const msgEl = document.getElementById('result-message');
             
-            // 全ボタンを選択不可にする
             document.querySelectorAll('.option-btn').forEach((btn, idx) => {
                 const optNum = idx + 1;
                 if (optNum === item.ans) {
-                    btn.classList.add('correct'); // 正解のボタンを緑色に
+                    btn.classList.add('correct');
                 }
             });
             
@@ -286,7 +310,7 @@
                 msgEl.innerText = "⭕ 正解！";
                 msgEl.style.color = "#28a745";
             } else {
-                clickedBtn.classList.add('wrong'); // 間違えたボタンを赤色に
+                clickedBtn.classList.add('wrong');
                 msgEl.innerText = `❌ 不正解... (正解は ${item.ans})`;
                 msgEl.style.color = "#dc3545";
             }
