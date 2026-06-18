@@ -56,8 +56,9 @@
         <div class="setting-item">
             <label>出題カテゴリ</label>
             <div class="btn-group">
-                <button class="toggle-btn ch-btn active" data-ch="第8章：腫瘍">8章</button>
-                <button class="toggle-btn ch-btn" data-ch="第9章：免疫異常・アレルギー">9章</button>
+                <button class="toggle-btn ch-btn active" data-ch="第8章">8章</button>
+                <button class="toggle-btn ch-btn" data-ch="第9章">9章</button>
+                <button class="toggle-btn ch-btn" data-ch="第10章">10章</button>
             </div>
             <button class="all-btn" onclick="selectAllChapters()">全範囲を選択</button>
         </div>
@@ -144,16 +145,16 @@
                 const p = line.split(',');
                 if (p.length < 9) return;
                 database.push({
-                    no: p[0], chapter: p[1], question: p[2],
-                    options: [p[3], p[4], p[5], p[6]],
-                    ans: parseInt(p[7]), explanation: p[8]
+                    no: p[0].trim(), chapter: p[1].trim(), question: p[2].trim(),
+                    options: [p[3].trim(), p[4].trim(), p[5].trim(), p[6].trim()],
+                    ans: parseInt(p[7].trim()), explanation: p[8].trim()
                 });
             });
             document.getElementById('db-status').innerHTML = `✅ ${database.length}件のデータを読み込みました。`;
         }
 
         function startQuiz() {
-            const active = Array.from(document.querySelectorAll('.ch-btn.active')).map(b => b.getAttribute('data-ch'));
+            const active = Array.from(document.querySelectorAll('.ch-btn.active')).map(b => b.getAttribute('data-ch') || b.getAttribute('data-ch'));
             let filtered = database.filter(item => active.includes(item.chapter));
             if (filtered.length === 0) return alert('章を選択してください');
             
