@@ -43,7 +43,7 @@
         
         .card-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; }
         
-        /* 問題文テキスト（見やすく行間を広げました） */
+        /* 問題文テキスト */
         .question-body { 
             font-size: 1.1rem; 
             font-weight: 600; 
@@ -77,7 +77,7 @@
             padding: 14px 28px; border-radius: 14px; font-weight: bold; font-size: 1rem; 
             cursor: pointer; display: inline-flex; align-items: center; justify-content: center; 
             gap: 8px; transition: all 0.15s; border: none; background-color: var(--primary); color: white; 
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); visibility: hidden; /* 回答するまで隠す */
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); visibility: hidden; 
         }
         .btn-next:active { transform: scale(0.98); }
 
@@ -184,9 +184,14 @@
         return rows;
     }
 
-    // ★ anadata.csv から読み込み
-    fetch('anadata.csv')
-        .then(r => r.text())
+    // ★ 読み込み先を data2.csv に修正しました
+    fetch('data2.csv')
+        .then(r => {
+            if (!r.ok) {
+                throw new Error(`ファイルが見つかりません (Status: ${r.status})。data2.csv が同じフォルダにあるか確認してください。`);
+            }
+            return r.text();
+        })
         .then(text => {
             const parsedRows = parseCSV(text);
             
@@ -205,9 +210,14 @@
                     ans: answerText
                 };
             }).filter(item => item !== null && item.ch > 0);
+
+            if (allData.length === 0) {
+                alert("警告: CSVデータは読み込めましたが、有効な問題が0件です。データ形式を確認してください。");
+            }
         })
         .catch(err => {
             console.error("CSV読み込みエラー:", err);
+            alert("【CSV読み込みエラー】\n" + err.message);
         });
 
     function toggleChapter(btn) {
@@ -232,119 +242,6 @@
 
     function startQuiz() {
         if (selectedChapters.size === 0) return alert("章を1つ以上選択してください。");
+        if (allData.length === 0) return alert("データが読み込まれていません。CSVファイルを確認してください。");
         
-        let filtered = allData.filter(d => selectedChapters.has(d.ch));
-        if (filtered.length === 0) return alert("選択した章の問題が見つかりません。");
-
-        filtered.sort(() => Math.random() - 0.5);
-
-        const numSelect = document.getElementById('num-q').value;
-        const count = numSelect === 'all' ? filtered.length : Math.min(parseInt(numSelect), filtered.length);
-        
-        quizQueue = filtered.slice(0, count);
-        currentIdx = 0;
-
-        document.getElementById('setup-area').style.display = 'none';
-        document.getElementById('quiz-area').style.display = 'block';
-        showQ();
-    }
-
-    // 誤答を他のデータからランダム抽出して4択を作るロジック
-    function generateChoices(correctAns, currentCh) {
-        // 同じ章のユニークな答えをリストアップ
-        let pool = allData.filter(d => d.ch === currentCh).map(d => d.ans.split('|')[0].trim());
-        let allAnswers = [...new Set(pool)];
-        
-        // 足りなければ全体から集めるフォールバック
-        if (allAnswers.length < 4) {
-            pool = allData.map(d => d.ans.split('|')[0].trim());
-            allAnswers = [...new Set(pool)];
-        }
-        
-        // 正解と空文字を除外
-        allAnswers = allAnswers.filter(a => a !== correctAns && a !== '');
-        
-        // シャッフルして誤答を3つ選ぶ
-        allAnswers.sort(() => Math.random() - 0.5);
-        let choices = allAnswers.slice(0, 3);
-        
-        // 正解を追加して再度シャッフル
-        choices.push(correctAns);
-        choices.sort(() => Math.random() - 0.5);
-        
-        return choices;
-    }
-
-    function showQ() {
-        const q = quizQueue[currentIdx];
-        
-        document.getElementById('card-progress').innerText = `カード ${currentIdx + 1} / ${quizQueue.length}`;
-        document.getElementById('card-category').innerText = `病理学 ＞ ${q.ch}章`;
-        
-        // 穴埋め用の記号を4択向けに「（  ）」に置換して表示
-        let displayQuestion = q.q.replace(/〔\s*\?\s*〕/g, '（  ）');
-        document.getElementById('q-text').innerText = displayQuestion;
-        
-        // 正解テキスト（複数ある場合は最初の1つ）
-        let correctAns = q.ans.split('|')[0].trim();
-        
-        // 4択を生成
-        let choices = generateChoices(correctAns, q.ch);
-        
-        // ボタンの生成
-        let choicesBox = document.getElementById('choices-box');
-        choicesBox.innerHTML = '';
-        
-        choices.forEach(choice => {
-            let btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice;
-            btn.onclick = () => checkAnswer(btn, choice, correctAns);
-            choicesBox.appendChild(btn);
-        });
-
-        // 「次のカード」ボタンは回答するまで隠す
-        document.getElementById('next-action-btn').style.visibility = 'hidden';
-    }
-
-    function checkAnswer(selectedBtn, selectedAns, correctAns) {
-        const buttons = document.querySelectorAll('.choice-btn');
-        
-        buttons.forEach(b => {
-            b.classList.add('disabled'); // 連続タップ防止
-            if (b.innerText === correctAns) {
-                b.classList.add('correct'); // 正解ボタンを緑にする
-            }
-        });
-
-        if (selectedAns !== correctAns) {
-            selectedBtn.classList.add('incorrect'); // 間違えたボタンを赤にする
-        }
-
-        // 次へ進むボタンを表示
-        const nextBtn = document.getElementById('next-action-btn');
-        if (currentIdx === quizQueue.length - 1) {
-            nextBtn.innerText = "演習を終了 ➔";
-        } else {
-            nextBtn.innerText = "次のカード ➔";
-        }
-        nextBtn.style.visibility = 'visible';
-    }
-
-    function goToNext() {
-        currentIdx++;
-        if (currentIdx < quizQueue.length) {
-            showQ();
-        } else {
-            resetToPortal();
-        }
-    }
-
-    function resetToPortal() {
-        document.getElementById('quiz-area').style.display = 'none';
-        document.getElementById('setup-area').style.display = 'block';
-        currentIdx = 0;
-    }
-</script>
-</body>
-</html>
+        let filtered = allData.filter(d => selectedChapters.
