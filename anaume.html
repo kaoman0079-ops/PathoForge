@@ -26,7 +26,6 @@
         .quiz-card { background: #fff; border: 1px solid #ccd1d9; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 20px; }
         .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #95a5a6; font-weight: bold; margin-bottom: 25px; border-bottom: 1px solid #f1f2f6; padding-bottom: 15px; }
         
-        /* 問題文章の表示（タップしやすいよう行間を広く） */
         .card-body { 
             font-size: 1.25rem; 
             font-weight: bold; 
@@ -36,32 +35,29 @@
             word-break: break-word; 
         }
         
-        /* ★MedBlank風：隠し黒塗りボックス★ */
         .blank {
             display: inline-block;
-            background-color: #2c3e50; /* 隠れている時は文字色と同じにして完全に隠蔽 */
+            background-color: #2c3e50; 
             color: #2c3e50;
             border-radius: 6px;
             padding: 0 8px;
             margin: 0 4px;
             cursor: pointer;
             transition: all 0.15s ease;
-            user-select: none;         /* 長押しで文字選択されてカンニングできるのを防止 */
+            user-select: none;         
             vertical-align: middle;
             line-height: 1.4;
             border-bottom: 2px solid #1a252f;
-            min-width: 2.5em;          /* 短い答えでもタップしやすいように最低幅を確保 */
+            min-width: 2.5em;          
             text-align: center;
         }
-        /* ★タップして開いた状態★ */
         .blank.open {
-            background-color: #ffe9e9; /* 薄い赤ピンク */
-            color: #e74c3c;           /* 文字は赤 */
+            background-color: #ffe9e9; 
+            color: #e74c3c;           
             border-bottom: 2px solid #e74c3c;
             cursor: default;
         }
 
-        /* 下部ボタンエリア */
         .action-area { display: flex; gap: 12px; margin-top: 20px; }
         .action-area .all-btn { flex: 1; margin: 0; padding: 14px; font-size: 0.95rem; }
         .next-btn { flex: 1; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; box-sizing: border-box; }
@@ -117,7 +113,7 @@
         <div class="quiz-card">
             <div class="card-header">
                 <span id="card-count">カード 1 / 10</span>
-                <span id="card-meta">病理学 ➔ 8章</span>
+                <span id="card-meta">病理学</span>
             </div>
             <div class="card-body" id="question-text">問題文読み込み中...</div>
         </div>
@@ -139,10 +135,6 @@
         let quizQueue = [];
         let currentIndex = 0;
 
-        const baseUrl = window.location.pathname.includes('/PathoForge/') 
-            ? '/PathoForge/' 
-            : './';
-
         window.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.ch-btn').forEach(btn => {
                 btn.addEventListener('click', () => btn.classList.toggle('active'));
@@ -161,7 +153,8 @@
         }
 
         function fetchCSV() {
-            const csvPath = baseUrl + 'anadata.csv';
+            // シンプルに同じフォルダのcsvを指定
+            const csvPath = './anadata.csv';
             console.log("CSV読み込み開始:", csvPath);
             
             fetch(csvPath)
@@ -175,7 +168,7 @@
                 .catch(err => {
                     console.error("エラー:", err);
                     const statusEl = document.getElementById('db-status');
-                    statusEl.innerHTML = `❌ <strong>データ読み込み失敗</strong><br>${err.message}`;
+                    statusEl.innerHTML = `❌ <strong>データ読み込み失敗</strong><br>${err.message}<br><span style="font-size:0.8rem; color:#888;">※PCやiPadのローカルフォルダから直接開いている場合、ブラウザのセキュリティ制限で止まることがあります。GitHubにプッシュしてWEB上で確認してください。</span>`;
                     statusEl.style.color = "#e74c3c";
                     statusEl.style.borderColor = "#e74c3c";
                 });
@@ -292,17 +285,68 @@
             showCard();
         }
 
-        /* 🔥 【大修正】ギャグを撲滅する暗記シート成形ロジック */
         function formatMedBlankStyle(question, answers) {
             let html = question;
-
-            // 1. 答えの文字列（answers）を「、」「,」「/」やスペースで配列にバラバラにする
-            // 例: "自律的、腫瘍性" -> ['自律的', '腫瘍性']
             const answerArray = answers.split(/[,、\/\|\s\n]+/).filter(a => a.trim() !== '');
-
-            // 2. 問題文の中にあるプレースホルダー（ { ? }, {?}, (?), （？）など ）を見つける正規表現
             const placeholderRegex = /[\{\(\[\（][?\s？][\}\)\]\）]/g;
-
             let answerIndex = 0;
 
-            // 3. 発見したハテナ目印を、分解した答え
+            if (placeholderRegex.test(html)) {
+                html = html.replace(placeholderRegex, () => {
+                    const ans = answerArray[answerIndex] ? answerArray[answerIndex].trim() : '?';
+                    answerIndex++;
+                    return `<span class="blank" onclick="this.classList.add('open')">${ans}</span>`;
+                });
+                return html;
+            }
+
+            const hasParentheses = /[（\(][^）\)]+[）\)]/.test(html);
+            if (hasParentheses) {
+                return html.replace(/[（\(]([^）\)]+)[）\)]/g, '<span class="blank" onclick="this.classList.add(\'open\')">$1</span>');
+            }
+
+            if (answers && html.includes(answers)) {
+                const escapedAnswers = answers.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                return html.replace(new RegExp(escapedAnswers, 'g'), `<span class="blank" onclick="this.classList.add('open')">${answers}</span>`);
+            }
+
+            return html + ` <span style="color: #95a5a6; font-size: 1rem; font-weight: normal; margin-left: 6px;">➔</span> <span class="blank" onclick="this.classList.add('open')">${answers}</span>`;
+        }
+
+        function showCard() {
+            if (currentIndex >= quizQueue.length) return;
+            
+            const item = quizQueue[currentIndex];
+            
+            document.getElementById('card-count').innerText = `カード ${currentIndex + 1} / ${quizQueue.length}`;
+            document.getElementById('card-meta').innerText = `病理学 ➔ ${item.chapter}章 No.${item.no}`;
+            document.getElementById('question-text').innerHTML = formatMedBlankStyle(item.question, item.answers);
+        }
+
+        function revealAllBlanks() {
+            document.querySelectorAll('.blank').forEach(el => el.classList.add('open'));
+        }
+
+        function nextCard() {
+            currentIndex++;
+            if (currentIndex < quizQueue.length) {
+                showCard();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('result-view').style.display = 'block';
+        }
+
+        function backToSetup() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('result-view').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
+            document.getElementById('setup-view').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
