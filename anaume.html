@@ -5,51 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PathoForge - 穴埋め暗記シート</title>
     <style>
-        /* 全体ベーススタイル */
         body { font-family: -apple-system, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; text-align: center; color: #2c3e50; }
         .container { max-width: 600px; margin: 20px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        
-        /* 戻るボタン */
-        .back-btn { background: #fff; border: 1px solid #ccd1d9; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: inline-block; margin-bottom: 20px; color: #555; font-weight: bold; text-decoration: none; }
+        .back-btn { background: #fff; border: 1px solid #ccd1d9; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: inline-block; margin-bottom: 20px; color: #555; }
         .back-btn:hover { background: #f8f9fa; }
-
         h2 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 20px; font-weight: bold; }
-        
-        /* 【重要】データ読み込み状態メーター */
         .status-box { background: #f8f9fa; border: 1px solid #ccd1d9; padding: 12px; border-radius: 12px; margin-bottom: 25px; font-size: 0.9rem; text-align: left; line-height: 1.4; }
-
-        /* 設定画面用スタイル */
         .setting-item { margin-bottom: 25px; text-align: left; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 0.95rem; }
         select { width: 100%; padding: 14px; font-size: 1rem; border-radius: 12px; border: 1px solid #ccd1d9; background-color: #fff; font-weight: 600; color: #2c3e50; outline: none; box-sizing: border-box; }
-        
-        /* グループボタン（章・出題順用） */
         .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        .toggle-btn { flex: 1; padding: 12px; border: 1px solid #ccd1d9; background: #fff; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.15s; color: #2c3e50; text-align: center; font-size: 0.95rem; }
+        .toggle-btn { flex: 1; padding: 12px; border: 1px solid #ccd1d9; background: #fff; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.15s; color: #2c3e50; text-align: center; }
         .toggle-btn.active { background: #ffe9e9; color: #e74c3c; border-color: #e74c3c; }
-        
         .all-btn { width: 100%; padding: 12px; border: 1px solid #ccd1d9; background: #f8f9fa; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; color: #555; }
-        .start-btn { width: 100%; padding: 16px; background-color: #e74c3c; color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: background 0.2s; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
+        .start-btn { width: 100%; padding: 16px; background-color: #e74c3c; color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: all 0.2s; }
         .start-btn:hover { background-color: #c0392b; }
-
-        /* クイズ画面用スタイル */
         .quiz-view { display: none; }
         .quiz-card { background: #fff; border: 1px solid #ccd1d9; border-radius: 24px; padding: 30px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 20px; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #95a5a6; font-weight: bold; margin-bottom: 25px; border-bottom: 1px solid #f1f2f6; padding-bottom: 12px; }
-        .card-body { font-size: 1.25rem; font-weight: bold; line-height: 1.6; color: #2c3e50; margin-bottom: 30px; word-break: break-all; }
-        
-        /* 隠された正解エリア */
-        .answer-zone { width: 100%; padding: 20px; background: #f8f9fa; border: 2px dashed #ccd1d9; border-radius: 14px; text-align: center; box-sizing: border-box; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #95a5a6; font-weight: bold; margin-bottom: 25px; border-bottom: 1px solid #f1f2f6; padding-bottom: 15px; }
+        .card-body { font-size: 1.1rem; font-weight: bold; line-height: 1.8; color: #2c3e50; margin-bottom: 30px; word-break: break-word; }
+        .answer-zone { width: 100%; padding: 20px; background: #f8f9fa; border: 2px dashed #ccd1d9; border-radius: 14px; text-align: center; box-sizing: border-box; cursor: pointer; transition: all 0.3s; }
         .answer-zone.hidden { color: #7f8c8d; font-weight: bold; background: #f1f2f6; font-size: 1.1rem; }
         .answer-zone.hidden:hover { background: #e4e7eb; border-color: #95a5a6; }
-        .answer-zone.revealed { background: #fff5f5; border: 2px solid #e74c3c; color: #e74c3c; font-size: 1.6rem; font-weight: bold; cursor: default; }
-
-        /* 解説ゾーン */
-        .explanation-zone { display: none; background: #f8f9fa; border-left: 4px solid #3498db; padding: 15px; border-radius: 8px; text-align: left; margin-bottom: 20px; font-size: 0.95rem; line-height: 1.5; }
-        .next-btn { width: 100%; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); }
+        .answer-zone.revealed { background: #fff5f5; border: 2px solid #e74c3c; color: #e74c3c; font-size: 1.1rem; font-weight: bold; cursor: default; line-height: 1.6; }
+        .next-btn { width: 100%; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; display: none; box-sizing: border-box; margin-top: 15px; }
         .next-btn:hover { background-color: #2980b9; }
-
-        /* 終了画面 */
         .result-view { display: none; }
     </style>
 </head>
@@ -63,7 +43,7 @@
         <h2>穴埋め暗記シート 設定</h2>
 
         <div id="db-status" class="status-box" style="color: #7f8c8d;">
-            ⏳ anadata.csv を読み込み中...
+            ⏳ データを準備中...
         </div>
 
         <div class="setting-item">
@@ -79,7 +59,7 @@
         <div class="setting-item">
             <label>出題順</label>
             <div class="btn-group">
-                <button class="toggle-btn order-btn active" data-order="sequence">順番通り（No.順）</button>
+                <button class="toggle-btn order-btn active" data-order="sequence">順番通り</button>
                 <button class="toggle-btn order-btn" data-order="random">ランダム</button>
             </div>
         </div>
@@ -104,21 +84,15 @@
                 <span id="card-meta">病理学 ➔ 8章</span>
             </div>
             <div class="card-body" id="question-text">問題文読み込み中...</div>
-            
-            <div id="answer-zone" class="answer-zone hidden">タップして正解を表示 🔍</div>
+            <div id="answer-zone" class="answer-zone hidden" onclick="revealAnswer()">タップして正解を表示 🔍</div>
         </div>
-
-        <div class="explanation-zone" id="explanation-zone">
-            <strong>💡 解説:</strong> <span id="explanation-text"></span>
-        </div>
-
         <button class="next-btn" id="next-btn" onclick="nextCard()">次のカード ➔</button>
     </div>
 
     <div id="result-view" class="container result-view">
         <h2>演習終了！</h2>
         <p style="font-size: 1.1rem; margin-bottom: 30px;">お疲れ様でした。すべてのカードを確認しました！</p>
-        <button class="start-btn" onclick="backToSetup()" style="background-color: #3498db; box-shadow: 0 4px 12px rgba(52,152,219,0.3);">設定に戻る 🔄</button>
+        <button class="start-btn" onclick="backToSetup()" style="background-color: #3498db;">設定に戻る 🔄</button>
     </div>
 
     <script>
@@ -126,20 +100,21 @@
         let quizQueue = [];
         let currentIndex = 0;
 
+        // GitHub Pages のパスを自動判定
+        const baseUrl = window.location.pathname.includes('/PathoForge/') 
+            ? '/PathoForge/' 
+            : './';
+
         window.addEventListener('DOMContentLoaded', () => {
-            // 章ボタンの切り替え
             document.querySelectorAll('.ch-btn').forEach(btn => {
                 btn.addEventListener('click', () => btn.classList.toggle('active'));
             });
-
-            // 出題順ボタンの切り替え
             document.querySelectorAll('.order-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.order-btn').forEach(b => b.classList.remove('active'));
                     e.currentTarget.classList.add('active');
                 });
             });
-
             fetchCSV();
         });
 
@@ -148,98 +123,99 @@
         }
 
         function fetchCSV() {
-            fetch('anadata.csv')
+            const csvPath = baseUrl + 'anadata.csv';
+            console.log("CSV読み込み開始:", csvPath);
+            
+            fetch(csvPath)
                 .then(res => {
-                    if (!res.ok) throw new Error("ファイルが見つかりません。ファイル名が「anadata.csv」になっているか確認してください。");
+                    console.log("レスポンス:", res.status, res.ok);
+                    if (!res.ok) throw new Error("ファイル取得失敗: " + res.status);
                     return res.text();
                 })
-                .then(text => parseCSV(text))
+                .then(text => {
+                    console.log("CSV取得成功。行数:", text.split('\n').length);
+                    parseCSV(text);
+                })
                 .catch(err => {
+                    console.error("エラー:", err);
                     const statusEl = document.getElementById('db-status');
-                    statusEl.innerHTML = `❌ <strong>データの読み込みに失敗しました</strong><br>` +
-                                          `・原因①: HTMLと同じ場所に <code>anadata.csv</code> がない<br>` +
-                                          `・原因②: ブラウザのセキュリティ制限（file:/// で直接開いている）<br>` +
-                                          `<small style="color:#e74c3c; display:block; margin-top:5px;">※VSCodeのLive Server等を使うと解決します</small>`;
+                    statusEl.innerHTML = `❌ <strong>データ読み込み失敗</strong><br>${err.message}`;
                     statusEl.style.color = "#e74c3c";
                     statusEl.style.borderColor = "#e74c3c";
-                    console.error(err);
                 });
         }
 
         function parseCSV(text) {
-            // 【修正】BOM（U+FEFF）の除去を安全に外側で行う
             text = text.replace(/^\uFEFF/, '');
-
-            const lines = [];
-            let row = [];
-            let curr = '';
-            let inQuotes = false;
-
-            for (let i = 0; i < text.length; i++) {
-                let char = text[i];
-                let next = text[i+1];
-
-                if (char === '"') {
-                    if (inQuotes && next === '"') { curr += '"'; i++; }
-                    else { inQuotes = !inQuotes; }
-                } else if (char === ',' && !inQuotes) {
-                    row.push(curr.trim()); curr = '';
-                } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (char === '\r' && next === '\n') i++;
-                    row.push(curr.trim());
-                    if (row.some(c => c !== '')) lines.push(row);
-                    row = []; curr = '';
-                } else {
-                    curr += char;
-                }
-            }
-            if (curr || row.length > 0) { row.push(curr.trim()); if (row.some(c => c !== '')) lines.push(row); }
-
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+            
             database = [];
-            let startIdx = 0;
-            if (lines.length > 0 && lines[0].some(c => c.includes('章') || c.includes('ch') || c.includes('No') || c.includes('問題'))) {
-                startIdx = 1; 
-            }
-
-            for (let i = startIdx; i < lines.length; i++) {
-                const cols = lines[i];
-                if (cols.length < 3) continue;
-
-                // 安全に章の数字を抽出
-                let chapterStr = cols[0] || "";
-                let matchCh = chapterStr.match(/\d+/);
-                let chapter = matchCh ? matchCh[0] : chapterStr.replace(/[^0-9]/g, '').trim();
-
-                // 安全にNoの数字を抽出
-                let noStr = cols[1] || "";
-                let matchNo = noStr.match(/\d+/);
-                let no = matchNo ? parseInt(matchNo[0]) : (i + 1);
-
-                let question = cols[2] ? cols[2].trim() : "";
-                let answer = cols[3] ? cols[3].trim() : "";
-                let explanation = cols[4] ? cols[4].trim() : "解説はありません。";
-
-                if (question && answer) {
-                    database.push({ chapter: chapter, no: no, question: question, answer: answer, explanation: explanation });
+            
+            for (let i = 1; i < lines.length; i++) {
+                try {
+                    const parts = parseCSVLine(lines[i]);
+                    if (parts.length < 3) continue;
+                    
+                    const chapter = parts[0].trim();
+                    const question = parts[1].trim();
+                    const answers = parts[2].trim();
+                    
+                    if (chapter && question && answers) {
+                        database.push({
+                            chapter: chapter,
+                            question: question,
+                            answers: answers,
+                            no: i
+                        });
+                    }
+                } catch (e) {
+                    console.error(`行 ${i} エラー:`, e);
                 }
             }
 
-            // 【新設】画面上部のメーターを「成功表示」に更新
             const statusEl = document.getElementById('db-status');
             if (database.length > 0) {
-                statusEl.innerHTML = `✅ <strong>anadata.csv</strong> から <strong>${database.length}件</strong> のデータを正常に読み込みました！`;
+                statusEl.innerHTML = `✅ <strong>${database.length}件</strong> のデータ読み込み完了！`;
                 statusEl.style.color = "#27ae60";
                 statusEl.style.borderColor = "#27ae60";
+                console.log("パース完了:", database.length, "件");
             } else {
-                statusEl.innerHTML = `⚠️ ファイルは開けましたが、有効なデータが0件です。列の並び（章, No, 問題, 正解）を確認してください。`;
+                statusEl.innerHTML = `⚠️ データが0件です`;
                 statusEl.style.color = "#e67e22";
                 statusEl.style.borderColor = "#e67e22";
             }
         }
 
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
         function startQuiz() {
             if (database.length === 0) {
-                alert('CSVデータが読み込まれていません。画面上部の赤いエラーメッセージを確認してください。');
+                alert('データが読み込まれていません');
                 return;
             }
 
@@ -249,38 +225,22 @@
             });
 
             if (activeChapters.length === 0) {
-                alert('出題カテゴリ（章）を1つ以上選択してください。');
+                alert('章を選択してください');
                 return;
             }
 
-            // 文字列と数値の両方の可能性を考慮してフィルタリング
-            let filtered = database.filter(item => {
-                return activeChapters.includes(item.chapter) || 
-                       activeChapters.includes(parseInt(item.chapter).toString());
-            });
+            let filtered = database.filter(item => activeChapters.includes(item.chapter));
 
             if (filtered.length === 0) {
-                alert('選択された章（' + activeChapters.join(', ') + '章）の問題が見つかりませんでした。CSVの1列目に正しい章番号が入っているか確認してください。');
+                alert('選択された章に問題がありません');
                 return;
             }
 
-            // 【修正】選んだ出題順（順番通り or ランダム）を安全に実行
             const orderActive = document.querySelector('.order-btn.active');
             const orderStyle = orderActive ? orderActive.getAttribute('data-order') : 'sequence';
             
             if (orderStyle === 'random') {
                 filtered.sort(() => Math.random() - 0.5);
-            } else {
-                // 順番通り（NaNエラーを絶対に起こさない安全な数値ソート）
-                filtered.sort((a, b) => {
-                    const chA = parseInt(a.chapter) || 0;
-                    const chB = parseInt(b.chapter) || 0;
-                    if (chA !== chB) return chA - chB;
-                    
-                    const noA = parseInt(a.no) || 0;
-                    const noB = parseInt(b.no) || 0;
-                    return noA - noB;
-                });
             }
 
             const countVal = document.getElementById('quiz-count').value;
@@ -297,4 +257,53 @@
         }
 
         function showCard() {
-            const item
+            if (currentIndex >= quizQueue.length) return;
+            
+            const item = quizQueue[currentIndex];
+            
+            document.getElementById('card-count').innerText = `カード ${currentIndex + 1} / ${quizQueue.length}`;
+            document.getElementById('card-meta').innerText = `病理学 ➔ ${item.chapter}章`;
+            document.getElementById('question-text').innerText = item.question;
+            
+            const answerZone = document.getElementById('answer-zone');
+            answerZone.classList.remove('revealed');
+            answerZone.classList.add('hidden');
+            answerZone.innerText = 'タップして正解を表示 🔍';
+            
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function revealAnswer() {
+            const item = quizQueue[currentIndex];
+            const answerZone = document.getElementById('answer-zone');
+            
+            answerZone.classList.remove('hidden');
+            answerZone.classList.add('revealed');
+            answerZone.innerText = item.answers;
+            
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function nextCard() {
+            currentIndex++;
+            if (currentIndex < quizQueue.length) {
+                showCard();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('result-view').style.display = 'block';
+        }
+
+        function backToSetup() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('result-view').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
+            document.getElementById('setup-view').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
